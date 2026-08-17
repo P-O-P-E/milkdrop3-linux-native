@@ -64,8 +64,14 @@ void ProjectMEngine::resize(const std::size_t width, const std::size_t height) c
 }
 
 void ProjectMEngine::loadPreset(const std::filesystem::path& path, const bool smooth) const {
+    clearError();
     const auto filename = path.string();
     projectm_load_preset_file(handle_, filename.c_str(), smooth);
+}
+
+void ProjectMEngine::loadPresetData(const std::string& data, const bool smooth) const {
+    clearError();
+    projectm_load_preset_data(handle_, data.c_str(), smooth);
 }
 
 void ProjectMEngine::loadIdle() const { projectm_load_preset_file(handle_, "idle://", false); }
@@ -79,6 +85,8 @@ void ProjectMEngine::addAudio(const float* samples, const unsigned int frames) c
 void ProjectMEngine::updateFps(const int fps) const { projectm_set_fps(handle_, std::max(1, fps)); }
 
 bool ProjectMEngine::locked() const { return projectm_get_preset_locked(handle_); }
+
+void ProjectMEngine::setLocked(const bool value) const { projectm_set_preset_locked(handle_, value); }
 
 bool ProjectMEngine::toggleLocked() const {
     const bool value = !locked();
@@ -99,6 +107,21 @@ void ProjectMEngine::addTouch(const float x, const float y) const {
 
 void ProjectMEngine::clearTouches() const { projectm_touch_destroy_all(handle_); }
 
+std::string ProjectMEngine::lastError() const {
+    const std::scoped_lock lock(errorMutex_);
+    return lastError_;
+}
+
+void ProjectMEngine::clearError() const {
+    const std::scoped_lock lock(errorMutex_);
+    lastError_.clear();
+}
+
+void ProjectMEngine::setError(std::string message) const {
+    const std::scoped_lock lock(errorMutex_);
+    lastError_ = std::move(message);
+}
+
 void ProjectMEngine::setSwitchRequestedCallback(std::function<void(bool)> callback) {
     switchRequestedCallback_ = std::move(callback);
 }
@@ -110,9 +133,15 @@ void ProjectMEngine::switchRequested(const bool hardCut, void* context) {
     }
 }
 
-void ProjectMEngine::switchFailed(const char* filename, const char* message, void*) {
-    std::cerr << "Preset load failed: " << (filename != nullptr ? filename : "<unknown>")
-              << ": " << (message != nullptr ? message : "unknown error") << '\n';
+void ProjectMEngine::switchFailed(const char* filename, const char* message, void* context) {
+    std::string error = "Preset load failed: ";
+    error += filename != nullptr && *filename != '\0' ? filename : "<memory>";
+    error += ": ";
+    error += message != nullptr ? message : "unknown error";
+    if (auto* engine = static_cast<ProjectMEngine*>(context); engine != nullptr) {
+        engine->setError(error);
+    }
+    std::cerr << error << '\n';
 }
 
 } // namespace md3

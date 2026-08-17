@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Config.hpp"
+#include "OverlayManager.hpp"
 #include "PresetCatalog.hpp"
+#include "PresetLibrary.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -12,6 +14,7 @@ namespace md3 {
 
 class AudioCapture;
 class ProjectMEngine;
+class UiController;
 
 class Application {
 public:
@@ -39,10 +42,13 @@ private:
 
     Config config_;
     PresetCatalog catalog_;
+    PresetLibrary library_;
+    OverlayManager overlays_;
     SDL_Window* window_{nullptr};
     SDL_GLContext glContext_{nullptr};
     std::unique_ptr<ProjectMEngine> engine_;
     std::unique_ptr<AudioCapture> audio_;
+    std::unique_ptr<UiController> ui_;
     bool running_{false};
     bool fullscreen_{false};
     std::chrono::steady_clock::time_point fpsWindowStart_{};
@@ -50,4 +56,3 @@ private:
 };
 
 } // namespace md3
-

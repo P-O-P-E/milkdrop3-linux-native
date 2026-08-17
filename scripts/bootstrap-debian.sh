@@ -14,7 +14,7 @@ if [[ "${1:-}" != "--skip-packages" ]]; then
     sudo apt-get update
     sudo apt-get install -y \
         build-essential cmake git ninja-build pkg-config \
-        libgl1-mesa-dev mesa-common-dev libsdl2-dev libglm-dev
+        libgl1-mesa-dev mesa-common-dev libsdl2-dev libsdl2-image-dev libglm-dev
 fi
 
 mkdir -p "${DEPENDENCY_ROOT}"
@@ -54,4 +54,3 @@ echo "  ${APP_BUILD}/milkdrop3-linux"
 echo
 echo "Install presets with:"
 echo "  ${PROJECT_ROOT}/scripts/get-presets.sh"
-

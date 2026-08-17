@@ -33,7 +33,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential cmake git ninja-build pkg-config \
-            libgl1-mesa-dev mesa-common-dev libsdl2-dev libglm-dev
+            libgl1-mesa-dev mesa-common-dev libsdl2-dev libsdl2-image-dev libglm-dev
       - name: Fetch libprojectM
         run: |
           git clone --branch v4.1.7 --depth 1 --recurse-submodules \
@@ -73,4 +73,3 @@ jobs:
         with:
           name: milkdrop3-linux-install-tree
           path: build/stage
-

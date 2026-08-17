@@ -2,6 +2,7 @@
 
 #include "AudioCapture.hpp"
 #include "ProjectMEngine.hpp"
+#include "UiController.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
@@ -15,7 +16,8 @@
 
 namespace md3 {
 
-Application::Application(Config config) : config_(std::move(config)), catalog_(config_.shuffle) {}
+Application::Application(Config config)
+    : config_(std::move(config)), catalog_(config_.shuffle), library_(config_.libraryFile) {}
 Application::~Application() { shutdown(); }
 
 void Application::initialize() {
@@ -59,12 +61,23 @@ void Application::initialize() {
                                                static_cast<std::size_t>(drawableHeight));
     engine_->setSwitchRequestedCallback([this](const bool hardCut) { loadNext(!hardCut); });
 
+    try {
+        library_.load();
+    } catch (const std::exception& error) {
+        std::cerr << "Unable to load ratings/favorites: " << error.what() << '\n';
+        overlays_.push(error.what(), OverlaySeverity::Warning);
+    }
+    catalog_.setWeightProvider([this](const std::filesystem::path& preset) {
+        return library_.selectionWeight(preset);
+    });
+
     for (const auto& path : config_.presetPaths) {
         const auto added = catalog_.addPath(path, config_.recursive);
         if (added > 0) {
             std::cout << "Added " << added << " presets from " << path << '\n';
         }
     }
+    catalog_.addPath(config_.generatedPresetDirectory, true);
     if (catalog_.empty()) {
         std::cerr << "No .milk presets found; displaying the projectM idle preset.\n"
                      "Run scripts/get-presets.sh or pass --preset-dir PATH.\n";
@@ -83,6 +96,24 @@ void Application::initialize() {
                   << "The visualizer will continue without live audio.\n";
     }
 
+    if (config_.uiEnabled || config_.statusOverlay) {
+        UiCallbacks callbacks;
+        callbacks.next = [this](const bool smooth) { loadNext(smooth); };
+        callbacks.previous = [this](const bool smooth) { loadPrevious(smooth); };
+        callbacks.select = [this](const std::filesystem::path& path, const bool smooth) {
+            if (catalog_.select(path).has_value()) {
+                loadCurrent(smooth);
+            }
+        };
+        callbacks.updateTitle = [this] { updateTitle(); };
+        ui_ = std::make_unique<UiController>(window_, glContext_, catalog_, library_, *engine_, overlays_,
+                                             config_.generatedPresetDirectory, config_.uiStateFile,
+                                             config_.statusOverlay, std::move(callbacks));
+        if (!config_.uiEnabled) {
+            ui_->toggle();
+        }
+    }
+
     fullscreen_ = config_.fullscreen;
     running_ = true;
     fpsWindowStart_ = std::chrono::steady_clock::now();
@@ -92,6 +123,7 @@ void Application::initialize() {
 
 void Application::shutdown() {
     running_ = false;
+    ui_.reset();
     audio_.reset();
     engine_.reset();
     if (glContext_ != nullptr) {
@@ -118,6 +150,11 @@ int Application::run() {
         glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         engine_->render();
+        if (ui_ != nullptr) {
+            ui_->beginFrame();
+            ui_->draw();
+            ui_->render();
+        }
         SDL_GL_SwapWindow(window_);
 
         ++fpsFrameCount_;
@@ -140,12 +177,18 @@ int Application::run() {
 void Application::pollEvents() {
     SDL_Event event{};
     while (SDL_PollEvent(&event) != 0) {
+        if (ui_ != nullptr) {
+            ui_->processEvent(event);
+        }
         switch (event.type) {
         case SDL_QUIT:
             running_ = false;
             break;
         case SDL_KEYDOWN:
-            if (event.key.repeat == 0) {
+            if (event.key.repeat == 0 && event.key.keysym.sym == SDLK_TAB && ui_ != nullptr &&
+                config_.uiEnabled) {
+                ui_->toggle();
+            } else if (event.key.repeat == 0 && (ui_ == nullptr || !ui_->wantsKeyboard())) {
                 handleKey(event.key);
             }
             break;
@@ -160,6 +203,9 @@ void Application::pollEvents() {
             SDL_free(event.drop.file);
             break;
         case SDL_MOUSEWHEEL:
+            if (ui_ != nullptr && ui_->wantsMouse()) {
+                break;
+            }
             if (event.wheel.y > 0) {
                 loadNext(true);
             } else if (event.wheel.y < 0) {
@@ -167,6 +213,9 @@ void Application::pollEvents() {
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
+            if (ui_ != nullptr && ui_->wantsMouse()) {
+                break;
+            }
             if (event.button.button == SDL_BUTTON_LEFT && (SDL_GetModState() & KMOD_SHIFT) != 0) {
                 int width = 0;
                 int height = 0;
@@ -228,7 +277,12 @@ void Application::handleDrop(const char* path) {
     if (path == nullptr) {
         return;
     }
-    const auto added = catalog_.addPath(path, true);
+    const std::filesystem::path dropped(path);
+    if (ui_ != nullptr && UiController::isImageFile(dropped)) {
+        ui_->addImageOverlay(dropped);
+        return;
+    }
+    const auto added = catalog_.addPath(dropped, true);
     if (added == 0) {
         std::cerr << "No new MilkDrop presets found in: " << path << '\n';
         return;
@@ -259,7 +313,19 @@ void Application::loadPrevious(const bool smooth) {
 void Application::loadCurrent(const bool smooth) {
     if (const auto current = catalog_.current(); current.has_value()) {
         engine_->loadPreset(*current, smooth);
+        if (const auto error = engine_->lastError(); !error.empty()) {
+            overlays_.push(error, OverlaySeverity::Error);
+            return;
+        }
+        library_.recordPlayed(*current);
+        try {
+            library_.save();
+        } catch (const std::exception& error) {
+            overlays_.push(error.what(), OverlaySeverity::Warning);
+        }
         std::cout << "Preset: " << current->filename().string() << '\n';
+        overlays_.push(current->stem().string(), OverlaySeverity::Information,
+                       std::chrono::milliseconds(2200));
         updateTitle();
     }
 }
@@ -304,6 +370,8 @@ Controls
   Middle click        Clear touch waveforms
   Mouse wheel         Change preset
   Drag and drop       Add a .milk file or preset directory
+  Drag image          Add a timed PNG/JPEG/WebP overlay
+  Tab                 Toggle in-window preset browser
   F1 / H              Print controls
   Escape / Ctrl+Q     Quit
 

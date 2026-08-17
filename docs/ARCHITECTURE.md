@@ -13,6 +13,8 @@ flowchart TD
     SDL[SDL2 window and events] --> App[Application loop]
     Audio[SDL2 capture device] --> Engine[projectM engine]
     Catalog[Preset catalog and history] --> App
+    UI[Browser and authoring UI] --> App
+    Documents[Preset documents and mashups] --> UI
     App --> Engine
     Engine --> GL[OpenGL framebuffer]
     GL --> SDL
@@ -24,14 +26,33 @@ flowchart TD
 |---|---|
 | `Config` | XDG configuration, environment path expansion, CLI parsing, and validation |
 | `PresetCatalog` | Recursive discovery, deduplication, shuffle/order, and 1,000-entry playback history |
+| `PresetLibrary` | Persistent ratings, favorites, play counts, and weighted-selection metadata |
+| `PresetDocument` | Loss-aware `.milk` parsing, serialization, classification, and diagnostics |
+| `MashupEngine` | Selective preset composition and collision-free generated output paths |
+| `GeneratedPresetStore` | Generated-directory ownership checks, safe rename, and recoverable move-to-trash |
+| `OverlayManager` | Bounded, expiring status and error messages |
 | `AudioCapture` | SDL capture-device discovery, selection, cycling, and floating-point PCM delivery |
 | `ProjectMEngine` | RAII wrapper for libprojectM configuration, PCM input, preset loading, and rendering |
+| `UiController` | Dear ImGui browser/editor, playlists, mashups, and SDL_image/OpenGL overlays |
 | `Application` | SDL/OpenGL lifecycle, events, drag-and-drop, controls, frame pacing, and status title |
 
 ## Dependency boundary
 
 `milkdrop3_core` has no graphical or audio dependencies and is unit-tested independently. The executable adds SDL2,
-OpenGL, and libprojectM 4. This split keeps configuration and preset behavior testable on headless CI runners.
+SDL2_image, Dear ImGui, OpenGL, and libprojectM 4. This split keeps configuration, preset documents, mashups, library
+metadata, playlists, and selection behavior testable on headless CI runners.
+
+## Authoring and mashups
+
+The editor parses preset text into a `PresetDocument` while preserving unknown keys and comments. It reports malformed
+lines, duplicate keys, and gaps in numbered equation/shader blocks before passing data to libprojectM. Mashups replace
+only explicitly selected domains and then call `projectm_load_preset_data()`. Generated files are written to a separate
+XDG data directory so community presets are never overwritten. Rename and removal controls are exposed only for files
+owned by that directory; removal moves files into its hidden `.trash` directory, which catalog scans skip.
+
+The six domains correspond to the useful portions of MilkDrop 2's historical state model: general post-processing,
+motion and equations, waves, shapes, warp shader, and composite shader. No Win32, D3D9, Wasabi, or legacy NS-EEL code is
+used.
 
 ## Audio
 
@@ -42,7 +63,5 @@ PipeWire stream selection is reserved for a later milestone.
 ## MilkDrop3 compatibility strategy
 
 Standard presets are rendered by libprojectM. `.milk2` support will use two independently rendered projectM surfaces and
-a native OpenGL compositor implementing MilkDrop3 blending patterns. Features requiring access to preset execution
-state, such as deep mash-up bins or expanded `q` variables, may require an upstreamable libprojectM extension rather
-than private renderer duplication.
-
+a native OpenGL compositor implementing MilkDrop3 blending patterns. Features requiring access to live preset execution
+state or expanded variables may require an upstreamable libprojectM extension rather than private renderer duplication.

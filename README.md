@@ -6,8 +6,9 @@ input, and audio capture. Wine is not used at build time or runtime.
 
 > [!IMPORTANT]
 > This is an independent compatibility project. It is not affiliated with or endorsed by the MilkDrop3,
-> MilkDrop, Winamp, or projectM authors. The current release is the native `.milk` MVP; MilkDrop3-specific
-> `.milk2`, mash-up, and MilkPanel compatibility are tracked in the [roadmap](docs/ROADMAP.md).
+> MilkDrop, Winamp, or projectM authors. The current release supports native `.milk` playback and portable
+> MilkDrop 2-style authoring/mashups. MilkDrop3-specific `.milk2` and MilkPanel compatibility remain on the
+> [roadmap](docs/ROADMAP.md).
 
 ## Current capabilities
 
@@ -21,6 +22,14 @@ input, and audio capture. Wine is not used at build time or runtime.
 - Drag-and-drop preset files and directories
 - Texture search paths and XDG-compatible configuration
 - Mouse/touch waveform controls supported by projectM
+- In-window preset browser with search, favorites, ratings, and play counts
+- Rating/favorite-weighted shuffle and M3U playlist import/export
+- Raw preset editor with syntax diagnostics, search/replace, preview, and non-destructive save copies
+- Mashups for general effects, motion/equations, waves, shapes, warp shaders, and composite shaders
+- Wave/shape fragment export and reuse as mashup donors
+- Generated-preset rename and confirmed, recoverable move-to-trash; imported presets remain read-only
+- Timed or persistent PNG/JPEG/WebP overlays, including image drag-and-drop
+- On-screen preset, lock, rating, favorite, play-count, and error/status display
 - Automated core tests, Ubuntu CI, and Debian/TGZ packaging configuration
 
 ## Quick start on Ubuntu or Debian
@@ -73,6 +82,8 @@ On PipeWire and PulseAudio systems, output-monitor sources may need to be select
 | Middle click | Clear touch waveforms |
 | Mouse wheel | Change preset |
 | Drag and drop | Add a `.milk` file or preset directory |
+| Drag an image | Add a timed image overlay |
+| `Tab` | Toggle the in-window preset browser |
 | `F1`, `H` | Print controls in the launching terminal |
 | `Escape`, `Ctrl+Q` | Quit |
 
@@ -86,13 +97,16 @@ cp config/config.ini ~/.config/milkdrop3-linux/config.ini
 ```
 
 The application follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME`. Command-line options override configuration-file
-values. Run `milkdrop3-linux --help` for all options.
+values. Ratings, favorites, and play counts are stored in `library.db`; edited and mashup presets are saved under the
+generated preset directory. The editor never overwrites the source preset. Files removed through the browser are moved
+to `generated/.trash` and are not loaded during preset scans. Run `milkdrop3-linux --help` for all options.
 
 The default data paths are:
 
 ```text
 ~/.local/share/milkdrop3-linux/presets
 ~/.local/share/milkdrop3-linux/textures
+~/.local/share/milkdrop3-linux/generated
 ```
 
 ## Manual build
@@ -100,7 +114,7 @@ The default data paths are:
 Install or build libprojectM 4.1 or newer, then configure this project with its installation prefix:
 
 ```bash
-sudo apt install build-essential cmake ninja-build libsdl2-dev libgl1-mesa-dev
+sudo apt install build-essential cmake ninja-build libsdl2-dev libsdl2-image-dev libgl1-mesa-dev
 cmake -S . -B build/release -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_PREFIX_PATH=/path/to/projectm/install
@@ -134,6 +148,7 @@ compatibility milestone.
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility roadmap](docs/ROADMAP.md)
+- [MilkDrop 2.25c compatibility reference](docs/MILKDROP2_REFERENCE.md)
 - [Third-party components and licenses](docs/THIRD_PARTY.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
@@ -142,4 +157,3 @@ compatibility milestone.
 
 The original code in this repository is MIT-licensed. libprojectM and preset packs retain their own licenses; see
 [third-party notices](docs/THIRD_PARTY.md). No proprietary MilkDrop3 shaders, executables, or assets are included.
-

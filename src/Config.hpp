@@ -10,6 +10,9 @@ struct Config {
     std::vector<std::filesystem::path> presetPaths;
     std::vector<std::filesystem::path> texturePaths;
     std::string audioDevice;
+    std::filesystem::path libraryFile;
+    std::filesystem::path generatedPresetDirectory;
+    std::filesystem::path uiStateFile;
 
     int width{1280};
     int height{720};
@@ -28,6 +31,8 @@ struct Config {
     bool recursive{true};
     bool hardCuts{true};
     bool vsync{true};
+    bool uiEnabled{true};
+    bool statusOverlay{true};
     bool listAudioDevices{false};
     bool showHelp{false};
     bool showVersion{false};
@@ -38,4 +43,3 @@ struct Config {
 };
 
 } // namespace md3
-

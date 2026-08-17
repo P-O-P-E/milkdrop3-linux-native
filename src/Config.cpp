@@ -98,6 +98,12 @@ void applySetting(Config& config, const std::string& rawKey, const std::string& 
         config.texturePaths.push_back(expandPath(value));
     } else if (key == "audio_device") {
         config.audioDevice = value;
+    } else if (key == "library_file") {
+        config.libraryFile = expandPath(value);
+    } else if (key == "generated_preset_dir") {
+        config.generatedPresetDirectory = expandPath(value);
+    } else if (key == "ui_state_file") {
+        config.uiStateFile = expandPath(value);
     } else if (key == "width") {
         config.width = parseInt(value, key);
     } else if (key == "height") {
@@ -128,6 +134,10 @@ void applySetting(Config& config, const std::string& rawKey, const std::string& 
         config.hardCuts = parseBool(value);
     } else if (key == "vsync") {
         config.vsync = parseBool(value);
+    } else if (key == "ui_enabled") {
+        config.uiEnabled = parseBool(value);
+    } else if (key == "status_overlay") {
+        config.statusOverlay = parseBool(value);
     } else {
         throw std::runtime_error("Unknown configuration key: " + rawKey);
     }
@@ -206,6 +216,9 @@ Config Config::fromCommandLine(const int argc, char** argv) {
         dataHome() / "milkdrop3-linux" / "textures",
         std::filesystem::current_path() / "textures",
     };
+    config.libraryFile = dataHome() / "milkdrop3-linux" / "library.db";
+    config.generatedPresetDirectory = dataHome() / "milkdrop3-linux" / "generated";
+    config.uiStateFile = dataHome() / "milkdrop3-linux" / "ui.ini";
 
     std::optional<std::filesystem::path> explicitConfig;
     for (int index = 1; index < argc; ++index) {
@@ -230,6 +243,10 @@ Config Config::fromCommandLine(const int argc, char** argv) {
             config.texturePaths.push_back(expandPath(requiredValue(index, argc, argv, argument)));
         } else if (argument == "--audio-device") {
             config.audioDevice = requiredValue(index, argc, argv, argument);
+        } else if (argument == "--library-file") {
+            config.libraryFile = expandPath(requiredValue(index, argc, argv, argument));
+        } else if (argument == "--generated-preset-dir") {
+            config.generatedPresetDirectory = expandPath(requiredValue(index, argc, argv, argument));
         } else if (argument == "--width") {
             config.width = parseInt(requiredValue(index, argc, argv, argument), argument);
         } else if (argument == "--height") {
@@ -252,6 +269,10 @@ Config Config::fromCommandLine(const int argc, char** argv) {
             config.hardCuts = false;
         } else if (argument == "--no-vsync") {
             config.vsync = false;
+        } else if (argument == "--no-ui") {
+            config.uiEnabled = false;
+        } else if (argument == "--no-status-overlay") {
+            config.statusOverlay = false;
         } else if (argument == "--list-audio-devices") {
             config.listAudioDevices = true;
         } else if (argument == "--help" || argument == "-h") {
@@ -276,6 +297,8 @@ Usage: milkdrop3-linux [options]
   --texture-dir PATH          Add a texture search directory
   --audio-device NAME|INDEX   Capture from a named or numbered input
   --list-audio-devices        Print capture devices and exit
+  --library-file PATH         Ratings/favorites database path
+  --generated-preset-dir PATH Edited and mashup preset output directory
   --config PATH               Use a specific key=value configuration file
   --width PIXELS              Initial window width (default: 1280)
   --height PIXELS             Initial window height (default: 720)
@@ -288,6 +311,8 @@ Usage: milkdrop3-linux [options]
   --no-recursive              Do not scan preset subdirectories
   --disable-hard-cuts         Disable beat-driven hard cuts
   --no-vsync                  Disable vertical synchronization
+  --no-ui                     Disable the in-window browser and editor
+  --no-status-overlay         Hide the always-on preset/status overlay
   --version                   Print the application version
   -h, --help                  Show this help
 )";

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(milkdrop3-linux-native
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "Native MilkDrop-compatible visualizer for Debian and Ubuntu"
     LANGUAGES CXX
 )
@@ -14,7 +14,12 @@ option(MILKDROP3_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 add_library(milkdrop3_core
     src/Config.cpp
+    src/GeneratedPresetStore.cpp
+    src/MashupEngine.cpp
+    src/OverlayManager.cpp
     src/PresetCatalog.cpp
+    src/PresetDocument.cpp
+    src/PresetLibrary.cpp
 )
 
 target_include_directories(milkdrop3_core PUBLIC src)
@@ -30,13 +35,39 @@ endif()
 if(MILKDROP3_BUILD_APP)
     find_package(OpenGL REQUIRED)
     find_package(SDL2 CONFIG REQUIRED)
+    find_package(SDL2_image CONFIG REQUIRED)
     find_package(projectM4 4.1 CONFIG REQUIRED)
+
+    include(FetchContent)
+    FetchContent_Declare(imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.91.8
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(imgui)
+    add_library(imgui STATIC
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+    )
+    target_include_directories(imgui PUBLIC
+        ${imgui_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}/backends
+        ${imgui_SOURCE_DIR}/misc/cpp
+    )
+    target_link_libraries(imgui PUBLIC SDL2::SDL2 OpenGL::GL)
+    set_target_properties(imgui PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
     add_executable(milkdrop3-linux
         src/main.cpp
         src/Application.cpp
         src/AudioCapture.cpp
         src/ProjectMEngine.cpp
+        src/UiController.cpp
     )
 
     target_compile_features(milkdrop3-linux PRIVATE cxx_std_20)
@@ -45,6 +76,8 @@ if(MILKDROP3_BUILD_APP)
         milkdrop3_core
         libprojectM::projectM
         SDL2::SDL2
+        SDL2_image::SDL2_image
+        imgui
         OpenGL::GL
     )
 
@@ -68,6 +101,10 @@ if(MILKDROP3_BUILD_APP)
         DESTINATION ${CMAKE_INSTALL_DATADIR}/milkdrop3-linux
         RENAME config.example.ini
     )
+    install(FILES ${imgui_SOURCE_DIR}/LICENSE.txt
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/milkdrop3-linux-native
+        RENAME LICENSE-imgui.txt
+    )
 
     set(CPACK_PACKAGE_NAME "milkdrop3-linux-native")
     set(CPACK_PACKAGE_VENDOR "P-O-P-E")
@@ -77,7 +114,7 @@ if(MILKDROP3_BUILD_APP)
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
     set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl2-2.0-0, libgl1")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl2-2.0-0, libsdl2-image-2.0-0, libgl1")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
     include(CPack)
 endif()

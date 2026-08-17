@@ -16,10 +16,10 @@ formats, without copying proprietary binaries or shaders.
 
 ## Milestone 0.2 — Desktop integration
 
-- [ ] In-window settings and preset browser
+- [x] In-window settings and preset browser
 - [ ] Direct PipeWire output-node selection
-- [ ] Playlist import/export and favorites
-- [ ] On-screen preset/status display
+- [x] Playlist import/export, ratings, weighted shuffle, and favorites
+- [x] On-screen preset/status/error display
 - [ ] AppImage with bundled libprojectM
 - [ ] Debian package tested on clean Debian 12 and Ubuntu 24.04 installations
 
@@ -32,13 +32,14 @@ formats, without copying proprietary binaries or shaders.
 - [ ] Smooth transitions into and out of double presets
 - [ ] Golden-image compatibility test collection
 
-## Milestone 0.4 — Mash-up and authoring
+## Milestone 0.4 — Mash-up and authoring (in progress)
 
-- [ ] Warp/composite mash-up controls
-- [ ] Shape/wave import and export
+- [x] General, motion, wave, shape, warp, and composite mash-up controls
+- [x] Shape/wave fragment export and import through the donor workflow
 - [ ] Expanded variable compatibility where supported by the execution engine
-- [ ] Shader editor with compile diagnostics, search/replace, undo, and redo
-- [ ] Preset save, rename, delete, and favorites workflows
+- [x] Raw preset/shader editor with syntax and libprojectM compile diagnostics, search/replace, and native text undo
+- [x] Non-destructive preset save-copy and favorites workflows
+- [x] Generated-preset rename and recoverable trash workflows with confirmation
 
 ## Milestone 1.0 — Production compatibility release
 
@@ -52,4 +53,3 @@ formats, without copying proprietary binaries or shaders.
 
 MilkDrop3 3.33 documents a small number of non-open-source shaders. They will not be redistributed. Compatible open
 presets can be used, and equivalent clean-room presets may be developed separately when licensing permits.
-
