@@ -15,6 +15,15 @@
 #include <utility>
 
 namespace md3 {
+namespace {
+
+#ifdef MILKDROP3_MACOS_ARM64
+constexpr const char* productName = "MilkDrop3 Native";
+#else
+constexpr const char* productName = "MilkDrop3 Linux Native";
+#endif
+
+} // namespace
 
 Application::Application(Config config)
     : config_(std::move(config)), catalog_(config_.shuffle), library_(config_.libraryFile) {}
@@ -24,12 +33,21 @@ void Application::initialize() {
 #ifdef SDL_HINT_AUDIO_INCLUDE_MONITORS
     SDL_SetHint(SDL_HINT_AUDIO_INCLUDE_MONITORS, "1");
 #endif
+#ifdef SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES
+    SDL_SetHint(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "1");
+#endif
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) != 0) {
         throw std::runtime_error("SDL initialization failed: " + std::string(SDL_GetError()));
     }
 
+#ifdef MILKDROP3_MACOS_ARM64
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#endif
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -39,7 +57,7 @@ void Application::initialize() {
     if (config_.fullscreen) {
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }
-    window_ = SDL_CreateWindow("MilkDrop3 Linux Native", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window_ = SDL_CreateWindow(productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                config_.width, config_.height, flags);
     if (window_ == nullptr) {
         throw std::runtime_error("Window creation failed: " + std::string(SDL_GetError()));
@@ -238,7 +256,11 @@ void Application::pollEvents() {
 void Application::handleKey(const SDL_KeyboardEvent& event) {
     const auto key = event.keysym.sym;
     const auto modifiers = static_cast<SDL_Keymod>(event.keysym.mod);
-    if (key == SDLK_ESCAPE || (key == SDLK_q && (modifiers & KMOD_CTRL) != 0)) {
+    bool quitShortcut = key == SDLK_q && (modifiers & KMOD_CTRL) != 0;
+#ifdef MILKDROP3_MACOS_ARM64
+    quitShortcut = quitShortcut || (key == SDLK_q && (modifiers & KMOD_GUI) != 0);
+#endif
+    if (key == SDLK_ESCAPE || quitShortcut) {
         running_ = false;
     } else if (key == SDLK_SPACE || key == SDLK_RIGHT || key == SDLK_n) {
         loadNext(true);
@@ -331,7 +353,7 @@ void Application::loadCurrent(const bool smooth) {
 }
 
 void Application::updateTitle() {
-    std::string title = "MilkDrop3 Linux Native";
+    std::string title = productName;
     if (const auto current = catalog_.current(); current.has_value()) {
         title += " — " + current->stem().string();
     }
@@ -373,7 +395,7 @@ Controls
   Drag image          Add a timed PNG/JPEG/WebP overlay
   Tab                 Toggle in-window preset browser
   F1 / H              Print controls
-  Escape / Ctrl+Q     Quit
+  Escape / Ctrl/Cmd+Q Quit
 
 )";
 }

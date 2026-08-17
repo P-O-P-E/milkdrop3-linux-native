@@ -23,6 +23,16 @@ formats, without copying proprietary binaries or shaders.
 - [ ] AppImage with bundled libprojectM
 - [ ] Debian package tested on clean Debian 12 and Ubuntu 24.04 installations
 
+## Platform milestone — Apple Silicon macOS
+
+- [x] Native arm64-only build with Rosetta configurations rejected
+- [x] Cocoa/SDL2 lifecycle and OpenGL 4.1 rendering path
+- [x] Application Support paths, microphone permission, and audio-input entitlement
+- [x] Dependency-bundled `.app`, code-signing support, and DMG generation
+- [x] Native M1 GitHub Actions build and architecture verification
+- [ ] Developer ID signing and Apple notarization for public release artifacts
+- [ ] Interactive audio/rendering test matrix on current M-series hardware
+
 ## Milestone 0.3 — `.milk2` double presets
 
 - [ ] Parse and validate the documented `.milk2` container format
@@ -47,7 +57,7 @@ formats, without copying proprietary binaries or shaders.
 - [ ] AMD, Intel, and NVIDIA Mesa/proprietary-driver test matrix
 - [ ] Performance, shader-cache, and startup optimizations
 - [ ] Accessibility and keyboard-only UI review
-- [ ] Stable `.deb` and AppImage releases
+- [ ] Stable `.deb`, AppImage, and notarized macOS DMG releases
 
 ## Known boundary
 

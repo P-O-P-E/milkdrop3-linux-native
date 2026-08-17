@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MilkDrop3 Linux Native icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MilkDrop3 Native icon">
   <defs>
     <radialGradient id="background" cx="50%" cy="45%" r="70%">
       <stop offset="0" stop-color="#36136f"/>
@@ -17,4 +17,3 @@
   <path d="M139 183c63-73 174-82 240-8M135 343c74 83 197 84 271-7" fill="none" stroke="url(#wave)" stroke-opacity="0.72" stroke-width="14" stroke-linecap="round"/>
   <circle cx="256" cy="256" r="24" fill="#fff"/>
 </svg>
-

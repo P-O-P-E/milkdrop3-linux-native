@@ -27,6 +27,24 @@
         "MILKDROP3_BUILD_APP": "ON",
         "BUILD_TESTING": "ON"
       }
+    },
+    {
+      "name": "macos-arm64",
+      "displayName": "Native Apple Silicon application bundle",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-arm64",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.0",
+        "MILKDROP3_BUILD_APP": "ON",
+        "BUILD_TESTING": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -37,6 +55,10 @@
     {
       "name": "release",
       "configurePreset": "release"
+    },
+    {
+      "name": "macos-arm64",
+      "configurePreset": "macos-arm64"
     }
   ],
   "testPresets": [
@@ -49,7 +71,11 @@
       "name": "release",
       "configurePreset": "release",
       "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "macos-arm64",
+      "configurePreset": "macos-arm64",
+      "output": { "outputOnFailure": true }
     }
   ]
 }
-

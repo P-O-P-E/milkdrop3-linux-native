@@ -3,6 +3,14 @@
 All notable changes are documented here. This project follows semantic versioning after the initial compatibility
 releases.
 
+## 0.3.0 — 2026-08-17
+
+- Added an arm64-only Apple Silicon build with an M1 GitHub Actions runner.
+- Added a native macOS OpenGL 4.1 path, SDL2 main integration, and Apple-native application data directories.
+- Added a macOS `.app`, Info.plist microphone declaration, entitlement, icon, dependency fixup, signing, and DMG packaging.
+- Added Homebrew/libprojectM bootstrap and optional Developer ID notarization workflows.
+- Documented macOS audio permission and virtual system-audio routing.
+
 ## 0.2.0 — 2026-08-17
 
 - Added a native Dear ImGui preset browser, search, status overlay, ratings, favorites, and play counts.

@@ -106,6 +106,20 @@ void testConfigFileAndCliOverride() {
     require(config.presetDuration == 42.0, "config file number should be loaded");
 }
 
+void testPlatformDefaultPaths() {
+    const auto config = parse({"milkdrop3-native"});
+#ifdef MILKDROP3_MACOS_ARM64
+    const auto expectedRoot = std::filesystem::path("Library") / "Application Support" / "MilkDrop3 Native";
+    require(config.libraryFile.string().find(expectedRoot.string()) != std::string::npos,
+            "macOS metadata should use Application Support");
+    require(md3::Config::defaultConfigPath().parent_path().filename() == "MilkDrop3 Native",
+            "macOS configuration should use the application support directory");
+#else
+    require(config.libraryFile.string().find("milkdrop3-linux") != std::string::npos,
+            "Linux metadata should use its XDG application directory");
+#endif
+}
+
 void testPresetDocumentParsingAndDiagnostics() {
     const auto source = R"(MILKDROP_PRESET_VERSION=201
 PSVERSION_WARP=3
@@ -244,6 +258,7 @@ int main() {
         testNonRecursiveScan();
         testCommandLineConfiguration();
         testConfigFileAndCliOverride();
+        testPlatformDefaultPaths();
         testPresetDocumentParsingAndDiagnostics();
         testMashupComposition();
         testPresetLibraryPersistence();

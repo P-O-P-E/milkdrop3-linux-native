@@ -1,0 +1,46 @@
+include(BundleUtilities)
+
+set(bundle "${CMAKE_INSTALL_PREFIX}/MilkDrop3 Native.app")
+set(search_directories "@MILKDROP3_BUNDLE_SEARCH_DIRS@")
+
+if(NOT EXISTS "${bundle}")
+    message(FATAL_ERROR "Installed application bundle was not found: ${bundle}")
+endif()
+
+set(BU_CHMOD_BUNDLE_ITEMS ON)
+fixup_bundle("${bundle}" "" "${search_directories}")
+
+set(identity "$ENV{CODESIGN_IDENTITY}")
+if(identity STREQUAL "")
+    set(identity "-")
+endif()
+
+set(sign_arguments
+    --force
+    --deep
+    --sign "${identity}"
+    --entitlements "@CMAKE_CURRENT_SOURCE_DIR@/packaging/macos/entitlements.plist"
+)
+if(NOT identity STREQUAL "-")
+    list(APPEND sign_arguments --options runtime --timestamp)
+endif()
+
+execute_process(
+    COMMAND codesign ${sign_arguments} "${bundle}"
+    RESULT_VARIABLE sign_result
+    OUTPUT_VARIABLE sign_output
+    ERROR_VARIABLE sign_error
+)
+if(NOT sign_result EQUAL 0)
+    message(FATAL_ERROR "Code signing failed: ${sign_output}${sign_error}")
+endif()
+
+execute_process(
+    COMMAND codesign --verify --deep --strict --verbose=2 "${bundle}"
+    RESULT_VARIABLE verify_result
+    OUTPUT_VARIABLE verify_output
+    ERROR_VARIABLE verify_error
+)
+if(NOT verify_result EQUAL 0)
+    message(FATAL_ERROR "Bundle verification failed: ${verify_output}${verify_error}")
+endif()

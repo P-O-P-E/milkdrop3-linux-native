@@ -15,6 +15,11 @@ namespace {
 #define MILKDROP3_VERSION "0.1.0-dev"
 #endif
 constexpr const char* version = MILKDROP3_VERSION;
+#ifdef MILKDROP3_MACOS_ARM64
+constexpr const char* executableName = "MilkDrop3 Native";
+#else
+constexpr const char* executableName = "milkdrop3-linux";
+#endif
 }
 
 int main(int argc, char** argv) {
@@ -25,7 +30,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         if (config.showVersion) {
-            std::cout << "milkdrop3-linux " << version << '\n';
+            std::cout << executableName << ' ' << version << '\n';
             return 0;
         }
         if (config.listAudioDevices) {
@@ -46,7 +51,10 @@ int main(int argc, char** argv) {
         md3::Application application(std::move(config));
         return application.run();
     } catch (const std::exception& error) {
-        std::cerr << "milkdrop3-linux: " << error.what() << '\n';
+        std::cerr << executableName << ": " << error.what() << '\n';
+#ifdef MILKDROP3_MACOS_ARM64
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "MilkDrop3 Native", error.what(), nullptr);
+#endif
         return 1;
     }
 }

@@ -1,0 +1,50 @@
+name: macOS Apple Silicon
+
+on:
+  push:
+    branches: [macos-arm64]
+  pull_request:
+    branches: [main]
+    paths:
+      - CMakeLists.txt
+      - CMakePresets.json
+      - src/**
+      - cmake/**
+      - packaging/macos/**
+      - scripts/bootstrap-macos-arm64.sh
+      - .github/workflows/macos-arm64.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-arm64:
+    name: Native M1 build and bundle
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native runner
+        run: |
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = arm64
+          test "$(brew --prefix)" = /opt/homebrew
+      - name: Install build dependencies
+        run: brew install cmake ninja pkgconf sdl2-compat sdl2_image glm
+      - name: Build, test, bundle, and package
+        run: ./scripts/bootstrap-macos-arm64.sh --skip-packages
+      - name: Inspect native bundle
+        run: |
+          app="build/macos-arm64-stage/MilkDrop3 Native.app"
+          executable="${app}/Contents/MacOS/MilkDrop3 Native"
+          test "$(lipo -archs "${executable}")" = arm64
+          codesign --verify --deep --strict --verbose=2 "${app}"
+          otool -L "${executable}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: milkdrop3-native-macos-arm64
+          path: |
+            build/macos-arm64/*.dmg
+            build/macos-arm64-stage/MilkDrop3 Native.app
+          if-no-files-found: error

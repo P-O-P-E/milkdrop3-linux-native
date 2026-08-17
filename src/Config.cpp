@@ -33,11 +33,21 @@ std::filesystem::path homeDirectory() {
     return std::filesystem::current_path();
 }
 
+#ifndef MILKDROP3_MACOS_ARM64
 std::filesystem::path dataHome() {
     if (const auto* value = std::getenv("XDG_DATA_HOME"); value != nullptr && *value != '\0') {
         return value;
     }
     return homeDirectory() / ".local" / "share";
+}
+#endif
+
+std::filesystem::path applicationDataDirectory() {
+#ifdef MILKDROP3_MACOS_ARM64
+    return homeDirectory() / "Library" / "Application Support" / "MilkDrop3 Native";
+#else
+    return dataHome() / "milkdrop3-linux";
+#endif
 }
 
 std::filesystem::path expandPath(std::string value) {
@@ -200,25 +210,29 @@ void validate(const Config& config) {
 } // namespace
 
 std::filesystem::path Config::defaultConfigPath() {
+#ifdef MILKDROP3_MACOS_ARM64
+    return applicationDataDirectory() / "config.ini";
+#else
     if (const auto* value = std::getenv("XDG_CONFIG_HOME"); value != nullptr && *value != '\0') {
         return std::filesystem::path(value) / "milkdrop3-linux" / "config.ini";
     }
     return homeDirectory() / ".config" / "milkdrop3-linux" / "config.ini";
+#endif
 }
 
 Config Config::fromCommandLine(const int argc, char** argv) {
     Config config;
     config.presetPaths = {
-        dataHome() / "milkdrop3-linux" / "presets",
+        applicationDataDirectory() / "presets",
         std::filesystem::current_path() / "presets",
     };
     config.texturePaths = {
-        dataHome() / "milkdrop3-linux" / "textures",
+        applicationDataDirectory() / "textures",
         std::filesystem::current_path() / "textures",
     };
-    config.libraryFile = dataHome() / "milkdrop3-linux" / "library.db";
-    config.generatedPresetDirectory = dataHome() / "milkdrop3-linux" / "generated";
-    config.uiStateFile = dataHome() / "milkdrop3-linux" / "ui.ini";
+    config.libraryFile = applicationDataDirectory() / "library.db";
+    config.generatedPresetDirectory = applicationDataDirectory() / "generated";
+    config.uiStateFile = applicationDataDirectory() / "ui.ini";
 
     std::optional<std::filesystem::path> explicitConfig;
     for (int index = 1; index < argc; ++index) {
@@ -289,10 +303,18 @@ Config Config::fromCommandLine(const int argc, char** argv) {
 }
 
 std::string Config::helpText() {
-    return R"(MilkDrop3 Linux Native
+#ifdef MILKDROP3_MACOS_ARM64
+    const std::string heading = R"(MilkDrop3 Native for Apple Silicon
+
+Usage: MilkDrop3 Native [options]
+)";
+#else
+    const std::string heading = R"(MilkDrop3 Linux Native
 
 Usage: milkdrop3-linux [options]
-
+)";
+#endif
+    return heading + R"(
   --preset-dir PATH           Add a MilkDrop preset directory
   --texture-dir PATH          Add a texture search directory
   --audio-device NAME|INDEX   Capture from a named or numbered input

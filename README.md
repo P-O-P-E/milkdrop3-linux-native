@@ -1,8 +1,8 @@
-# MilkDrop3 Linux Native
+# MilkDrop3 Native
 
-A native C++20 MilkDrop-compatible visualizer for Debian and Ubuntu. It uses
+A native C++20 MilkDrop-compatible visualizer for Debian, Ubuntu, and Apple Silicon macOS. It uses
 [libprojectM 4](https://github.com/projectM-visualizer/projectm) for OpenGL rendering and SDL2 for windowing,
-input, and audio capture. Wine is not used at build time or runtime.
+input, and audio capture. Wine is not used on Linux, and the macOS build is native `arm64` without Rosetta.
 
 > [!IMPORTANT]
 > This is an independent compatibility project. It is not affiliated with or endorsed by the MilkDrop3,
@@ -12,15 +12,15 @@ input, and audio capture. Wine is not used at build time or runtime.
 
 ## Current capabilities
 
-- Native x86-64 Linux executable using SDL2 and OpenGL
+- Native x86-64 Linux executable and native Apple Silicon `arm64` application bundle
 - Standard `.milk` and `.prjm` preset discovery and rendering
-- PipeWire/PulseAudio/ALSA capture devices exposed through SDL2
-- Selectable capture device, including monitor sources for desktop audio
+- PipeWire/PulseAudio/ALSA and macOS CoreAudio capture devices exposed through SDL2
+- Selectable capture device, including Linux monitor sources and macOS virtual audio inputs
 - Smooth and beat-driven transitions through libprojectM
 - Shuffle, ordered playback, preset history, and preset lock
 - Resizable, HiDPI-aware window and desktop fullscreen mode
 - Drag-and-drop preset files and directories
-- Texture search paths and XDG-compatible configuration
+- Texture search paths with XDG/Linux and Application Support/macOS configuration
 - Mouse/touch waveform controls supported by projectM
 - In-window preset browser with search, favorites, ratings, and play counts
 - Rating/favorite-weighted shuffle and M3U playlist import/export
@@ -31,6 +31,24 @@ input, and audio capture. Wine is not used at build time or runtime.
 - Timed or persistent PNG/JPEG/WebP overlays, including image drag-and-drop
 - On-screen preset, lock, rating, favorite, play-count, and error/status display
 - Automated core tests, Ubuntu CI, and Debian/TGZ packaging configuration
+- M1-hosted macOS CI, dependency-bundled `.app`, ad-hoc signing, and DMG packaging
+
+## Quick start on Apple Silicon macOS
+
+The `macos-arm64` branch targets M1, M2, M3, M4, and later Apple Silicon Macs running macOS 14 or newer:
+
+```bash
+xcode-select --install
+git clone --branch macos-arm64 https://github.com/P-O-P-E/milkdrop3-linux-native.git
+cd milkdrop3-linux-native
+./scripts/bootstrap-macos-arm64.sh
+./scripts/get-presets.sh
+open "build/macos-arm64-stage/MilkDrop3 Native.app"
+```
+
+The bootstrap script requires native Homebrew under `/opt/homebrew`, builds libprojectM and the application as `arm64`,
+runs the tests, bundles non-system dynamic libraries, signs the bundle, and creates a DMG. See the
+[Apple Silicon guide](docs/MACOS_ARM64.md) for audio routing, Gatekeeper, Developer ID signing, and notarization.
 
 ## Quick start on Ubuntu or Debian
 
@@ -85,7 +103,7 @@ On PipeWire and PulseAudio systems, output-monitor sources may need to be select
 | Drag an image | Add a timed image overlay |
 | `Tab` | Toggle the in-window preset browser |
 | `F1`, `H` | Print controls in the launching terminal |
-| `Escape`, `Ctrl+Q` | Quit |
+| `Escape`, `Ctrl+Q`, `Command+Q` | Quit |
 
 ## Configuration
 
@@ -96,10 +114,11 @@ mkdir -p ~/.config/milkdrop3-linux
 cp config/config.ini ~/.config/milkdrop3-linux/config.ini
 ```
 
-The application follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME`. Command-line options override configuration-file
-values. Ratings, favorites, and play counts are stored in `library.db`; edited and mashup presets are saved under the
-generated preset directory. The editor never overwrites the source preset. Files removed through the browser are moved
-to `generated/.trash` and are not loaded during preset scans. Run `milkdrop3-linux --help` for all options.
+On Linux, the application follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME`. On macOS it uses
+`~/Library/Application Support/MilkDrop3 Native`. Command-line options override configuration-file values. Ratings,
+favorites, and play counts are stored in `library.db`; edited and mashup presets are saved under the generated preset
+directory. The editor never overwrites the source preset. Files removed through the browser are moved to
+`generated/.trash` and are not loaded during preset scans.
 
 The default data paths are:
 
@@ -107,6 +126,12 @@ The default data paths are:
 ~/.local/share/milkdrop3-linux/presets
 ~/.local/share/milkdrop3-linux/textures
 ~/.local/share/milkdrop3-linux/generated
+```
+
+On macOS, presets, textures, metadata, generated files, and UI state live below:
+
+```text
+~/Library/Application Support/MilkDrop3 Native
 ```
 
 ## Manual build
@@ -144,11 +169,16 @@ Until libprojectM 4 is broadly available from distribution repositories, the boo
 to its locally installed projectM library. Release packaging will bundle the required library after the first public
 compatibility milestone.
 
+On Apple Silicon, `./scripts/bootstrap-macos-arm64.sh` produces an arm64-only `.app` and DMG. The unsigned developer
+build is ad-hoc signed; public redistribution should use a Developer ID identity and Apple notarization as described in
+the macOS guide.
+
 ## Project documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility roadmap](docs/ROADMAP.md)
 - [MilkDrop 2.25c compatibility reference](docs/MILKDROP2_REFERENCE.md)
+- [Apple Silicon macOS build and runtime guide](docs/MACOS_ARM64.md)
 - [Third-party components and licenses](docs/THIRD_PARTY.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

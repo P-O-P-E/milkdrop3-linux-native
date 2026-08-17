@@ -98,7 +98,12 @@ struct UiController::Impl {
             ImGui::DestroyContext();
             throw std::runtime_error("Unable to initialize the ImGui SDL backend");
         }
-        if (!ImGui_ImplOpenGL3_Init("#version 330 core")) {
+#ifdef MILKDROP3_MACOS_ARM64
+        constexpr const char* glslVersion = "#version 410 core";
+#else
+        constexpr const char* glslVersion = "#version 330 core";
+#endif
+        if (!ImGui_ImplOpenGL3_Init(glslVersion)) {
             ImGui_ImplSDL2_Shutdown();
             ImGui::DestroyContext();
             throw std::runtime_error("Unable to initialize the ImGui OpenGL backend");

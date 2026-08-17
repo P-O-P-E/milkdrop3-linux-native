@@ -6,9 +6,10 @@ cmake-build-*/
 compile_commands.json
 *.AppImage
 *.deb
+*.dmg
 *.rpm
 *.tar.gz
 *.zip
 *.swp
 *~
-
+.DS_Store

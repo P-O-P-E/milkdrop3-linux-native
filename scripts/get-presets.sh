@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DATA_ROOT="${XDG_DATA_HOME:-${HOME}/.local/share}/milkdrop3-linux"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    DATA_ROOT="${HOME}/Library/Application Support/MilkDrop3 Native"
+else
+    DATA_ROOT="${XDG_DATA_HOME:-${HOME}/.local/share}/milkdrop3-linux"
+fi
 PRESET_ROOT="${DATA_ROOT}/presets"
 TEXTURE_ROOT="${DATA_ROOT}/textures"
 
@@ -29,4 +33,3 @@ update_or_clone \
 
 echo "Presets installed in ${PRESET_ROOT}"
 echo "Textures installed in ${TEXTURE_ROOT}"
-

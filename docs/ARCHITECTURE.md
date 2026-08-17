@@ -2,9 +2,9 @@
 
 ## Design goals
 
-The application is deliberately a native Linux frontend rather than a Windows compatibility wrapper. Platform-specific
-services are isolated so the MilkDrop compatibility work can progress without entangling rendering, audio, and desktop
-integration.
+The application is deliberately a native Linux and Apple Silicon frontend rather than a Windows compatibility wrapper.
+Platform-specific services are isolated so the MilkDrop compatibility work can progress without entangling rendering,
+audio, and desktop integration.
 
 ## Runtime flow
 
@@ -24,7 +24,7 @@ flowchart TD
 
 | Component | Responsibility |
 |---|---|
-| `Config` | XDG configuration, environment path expansion, CLI parsing, and validation |
+| `Config` | XDG/Linux and Application Support/macOS paths, environment expansion, CLI parsing, and validation |
 | `PresetCatalog` | Recursive discovery, deduplication, shuffle/order, and 1,000-entry playback history |
 | `PresetLibrary` | Persistent ratings, favorites, play counts, and weighted-selection metadata |
 | `PresetDocument` | Loss-aware `.milk` parsing, serialization, classification, and diagnostics |
@@ -42,13 +42,24 @@ flowchart TD
 SDL2_image, Dear ImGui, OpenGL, and libprojectM 4. This split keeps configuration, preset documents, mashups, library
 metadata, playlists, and selection behavior testable on headless CI runners.
 
+## Platform layer
+
+Linux builds request an OpenGL 3.3 core context and use XDG data/configuration locations. Apple Silicon builds are
+arm64-only application bundles, request Apple's native OpenGL 4.1 core profile, use SDL2main for Cocoa lifecycle
+integration, and store mutable data under `~/Library/Application Support/MilkDrop3 Native`. Both platforms use the same
+renderer, editor, preset catalog, and audio abstraction.
+
+The macOS install step uses CMake BundleUtilities to copy non-system dynamic dependencies into
+`Contents/Frameworks`, rewrite Mach-O install names, and sign the resulting bundle. Its Info.plist declares the
+microphone usage reason and an audio-input entitlement is included for hardened Developer ID signing.
+
 ## Authoring and mashups
 
 The editor parses preset text into a `PresetDocument` while preserving unknown keys and comments. It reports malformed
 lines, duplicate keys, and gaps in numbered equation/shader blocks before passing data to libprojectM. Mashups replace
 only explicitly selected domains and then call `projectm_load_preset_data()`. Generated files are written to a separate
-XDG data directory so community presets are never overwritten. Rename and removal controls are exposed only for files
-owned by that directory; removal moves files into its hidden `.trash` directory, which catalog scans skip.
+platform data directory so community presets are never overwritten. Rename and removal controls are exposed only for
+files owned by that directory; removal moves files into its hidden `.trash` directory, which catalog scans skip.
 
 The six domains correspond to the useful portions of MilkDrop 2's historical state model: general post-processing,
 motion and equations, waves, shapes, warp shader, and composite shader. No Win32, D3D9, Wasabi, or legacy NS-EEL code is
@@ -57,8 +68,9 @@ used.
 ## Audio
 
 SDL requests interleaved 48 kHz stereo `float32` capture samples and forwards them from its audio callback to
-`projectm_pcm_add_float()`. PipeWire and PulseAudio expose desktop-output monitor sources as capture devices. Direct
-PipeWire stream selection is reserved for a later milestone.
+`projectm_pcm_add_float()`. PipeWire and PulseAudio expose desktop-output monitor sources on Linux. macOS exposes
+microphones and virtual capture devices; system-output visualization requires a virtual driver such as BlackHole or
+Loopback. Direct PipeWire stream selection is reserved for a later milestone.
 
 ## MilkDrop3 compatibility strategy
 
