@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    name: Dependency-free core tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build
+      - name: Configure
+        run: cmake --preset core-tests
+      - name: Build
+        run: cmake --build --preset core-tests --parallel
+      - name: Test
+        run: ctest --preset core-tests
+
+  native-build:
+    name: Native Ubuntu build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake git ninja-build pkg-config \
+            libgl1-mesa-dev mesa-common-dev libsdl2-dev libglm-dev
+      - name: Fetch libprojectM
+        run: |
+          git clone --branch v4.1.7 --depth 1 --recurse-submodules \
+            https://github.com/projectM-visualizer/projectm.git build/projectm-src
+      - name: Build and install libprojectM
+        run: |
+          cmake -S build/projectm-src -B build/projectm-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/build/projectm-install" \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_TESTING=OFF \
+            -DENABLE_INSTALL=ON \
+            -DENABLE_PLAYLIST=OFF \
+            -DENABLE_SDL_UI=OFF \
+            -DENABLE_SYSTEM_PROJECTM_EVAL=OFF
+          cmake --build build/projectm-build --parallel
+          cmake --install build/projectm-build
+      - name: Configure application
+        run: |
+          cmake -S . -B build/app -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/build/projectm-install" \
+            -DCMAKE_INSTALL_RPATH="$GITHUB_WORKSPACE/build/projectm-install/lib" \
+            -DMILKDROP3_WARNINGS_AS_ERRORS=ON \
+            -DBUILD_TESTING=ON
+      - name: Build application
+        run: cmake --build build/app --parallel
+      - name: Test application core
+        run: ctest --test-dir build/app --output-on-failure
+      - name: Check command-line binary
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build/projectm-install/lib
+        run: build/app/milkdrop3-linux --version
+      - name: Stage install tree
+        run: cmake --install build/app --prefix "$GITHUB_WORKSPACE/build/stage"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: milkdrop3-linux-install-tree
+          path: build/stage
+

@@ -1,0 +1,14 @@
+build/
+cmake-build-*/
+.cache/
+.idea/
+.vscode/
+compile_commands.json
+*.AppImage
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.swp
+*~
+

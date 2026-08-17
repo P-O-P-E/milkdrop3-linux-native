@@ -1,0 +1,53 @@
+#pragma once
+
+#include "Config.hpp"
+#include "PresetCatalog.hpp"
+
+#include <SDL2/SDL.h>
+
+#include <chrono>
+#include <memory>
+
+namespace md3 {
+
+class AudioCapture;
+class ProjectMEngine;
+
+class Application {
+public:
+    explicit Application(Config config);
+    ~Application();
+
+    Application(const Application&) = delete;
+    Application& operator=(const Application&) = delete;
+
+    int run();
+
+private:
+    void initialize();
+    void shutdown();
+    void pollEvents();
+    void handleKey(const SDL_KeyboardEvent& event);
+    void handleDrop(const char* path);
+    void resize();
+    void loadNext(bool smooth);
+    void loadPrevious(bool smooth);
+    void loadCurrent(bool smooth);
+    void updateTitle();
+    void toggleFullscreen();
+    void printControls() const;
+
+    Config config_;
+    PresetCatalog catalog_;
+    SDL_Window* window_{nullptr};
+    SDL_GLContext glContext_{nullptr};
+    std::unique_ptr<ProjectMEngine> engine_;
+    std::unique_ptr<AudioCapture> audio_;
+    bool running_{false};
+    bool fullscreen_{false};
+    std::chrono::steady_clock::time_point fpsWindowStart_{};
+    unsigned int fpsFrameCount_{0};
+};
+
+} // namespace md3
+

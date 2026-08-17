@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=MilkDrop3 Linux Native
+GenericName=Audio Visualizer
+Comment=Native MilkDrop-compatible music visualization
+Exec=milkdrop3-linux
+Icon=milkdrop3-linux
+Terminal=false
+Categories=AudioVideo;Audio;Graphics;
+Keywords=music;audio;visualizer;milkdrop;projectm;
+StartupNotify=true
+

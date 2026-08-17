@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MilkDrop3 Linux Native icon">
+  <defs>
+    <radialGradient id="background" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#36136f"/>
+      <stop offset="1" stop-color="#070714"/>
+    </radialGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5ef2ff"/>
+      <stop offset="0.5" stop-color="#c265ff"/>
+      <stop offset="1" stop-color="#ff5f9e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#background)"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="12"/>
+  <path d="M76 275c54-132 105 132 158 0s105 132 202-18" fill="none" stroke="url(#wave)" stroke-width="28" stroke-linecap="round"/>
+  <path d="M139 183c63-73 174-82 240-8M135 343c74 83 197 84 271-7" fill="none" stroke="url(#wave)" stroke-opacity="0.72" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="24" fill="#fff"/>
+</svg>
+
