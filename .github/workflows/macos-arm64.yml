@@ -39,8 +39,10 @@ jobs:
           app="build/macos-arm64-stage/MilkDrop3 Native.app"
           executable="${app}/Contents/MacOS/MilkDrop3 Native"
           test "$(lipo -archs "${executable}")" = arm64
+          test "$(lipo -archs "${app}/Contents/Frameworks/libSDL3.dylib")" = arm64
           codesign --verify --deep --strict --verbose=2 "${app}"
           otool -L "${executable}"
+          "${executable}" --version
       - uses: actions/upload-artifact@v7
         with:
           name: milkdrop3-native-macos-arm64

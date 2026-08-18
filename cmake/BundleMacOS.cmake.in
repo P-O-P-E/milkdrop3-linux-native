@@ -2,13 +2,25 @@ include(BundleUtilities)
 
 set(bundle "${CMAKE_INSTALL_PREFIX}/MilkDrop3 Native.app")
 set(search_directories "@MILKDROP3_BUNDLE_SEARCH_DIRS@")
+set(sdl3_library "@MILKDROP3_SDL3_LIBRARY@")
 
 if(NOT EXISTS "${bundle}")
     message(FATAL_ERROR "Installed application bundle was not found: ${bundle}")
 endif()
+if(NOT EXISTS "${sdl3_library}")
+    message(FATAL_ERROR "SDL3 runtime library was not found: ${sdl3_library}")
+endif()
+
+# sdl2-compat discovers SDL3 with dlopen(), which is invisible to otool-based
+# dependency scanners. Copy it under the exact filename its macOS loader seeks
+# and pass it as an explicit runtime library for dependency fixup.
+set(frameworks_directory "${bundle}/Contents/Frameworks")
+set(bundled_sdl3 "${frameworks_directory}/libSDL3.dylib")
+file(MAKE_DIRECTORY "${frameworks_directory}")
+file(COPY_FILE "${sdl3_library}" "${bundled_sdl3}" ONLY_IF_DIFFERENT)
 
 set(BU_CHMOD_BUNDLE_ITEMS ON)
-fixup_bundle("${bundle}" "" "${search_directories}")
+fixup_bundle("${bundle}" "${bundled_sdl3}" "${search_directories}")
 
 set(identity "$ENV{CODESIGN_IDENTITY}")
 if(identity STREQUAL "")

@@ -98,6 +98,12 @@ done < <(find "${MACHO_DIRECTORIES[@]}" -type f -print0)
 
 codesign --verify --deep --strict --verbose=2 "${APP_BUNDLE}"
 
+if [[ ! -f "${APP_BUNDLE}/Contents/Frameworks/libSDL3.dylib" ]]; then
+    echo "The SDL3 runtime is missing from the application bundle." >&2
+    exit 1
+fi
+"${APP_EXECUTABLE}" --version
+
 (
     cd "${APP_BUILD}"
     cpack -G DragNDrop

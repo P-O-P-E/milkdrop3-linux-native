@@ -57,6 +57,16 @@ if(MILKDROP3_BUILD_APP)
     find_package(SDL2 CONFIG REQUIRED)
     find_package(SDL2_image CONFIG REQUIRED)
     find_package(projectM4 4.1 CONFIG REQUIRED)
+    if(APPLE)
+        # Homebrew's sdl2-compat loads SDL3 with dlopen() instead of linking it,
+        # so normal dependency scanning cannot discover the runtime library.
+        find_library(MILKDROP3_SDL3_LIBRARY
+            NAMES SDL3
+            PATHS "/opt/homebrew/opt/sdl3/lib"
+            NO_DEFAULT_PATH
+            REQUIRED
+        )
+    endif()
 
     include(FetchContent)
     FetchContent_Declare(imgui

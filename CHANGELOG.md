@@ -5,6 +5,7 @@ releases.
 
 ## 0.3.0 — 2026-08-17
 
+- Bundled Homebrew's dynamically loaded SDL3 runtime on macOS and added a packaged-executable smoke test.
 - Added an arm64-only Apple Silicon build with an M1 GitHub Actions runner.
 - Added a native macOS OpenGL 4.1 path, SDL2 main integration, and Apple-native application data directories.
 - Added a macOS `.app`, Info.plist microphone declaration, entitlement, icon, dependency fixup, signing, and DMG packaging.
