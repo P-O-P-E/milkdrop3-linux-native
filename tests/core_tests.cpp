@@ -33,10 +33,10 @@ md3::Config parse(std::vector<std::string> arguments) {
 class TemporaryDirectory {
 public:
     TemporaryDirectory() {
+        const auto timestamp = static_cast<long long>(
+            std::filesystem::file_time_type::clock::now().time_since_epoch().count());
         path_ = std::filesystem::temp_directory_path() /
-                ("milkdrop3-linux-tests-" + std::to_string(std::filesystem::file_time_type::clock::now()
-                                                                .time_since_epoch()
-                                                                .count()));
+                ("milkdrop3-linux-tests-" + std::to_string(timestamp));
         std::filesystem::create_directories(path_);
     }
     ~TemporaryDirectory() {
