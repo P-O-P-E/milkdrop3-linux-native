@@ -88,7 +88,11 @@ if [[ -d "${APP_BUNDLE}/Contents/Frameworks" ]]; then
 fi
 while IFS= read -r -d '' item; do
     if file "${item}" | grep -q "Mach-O"; then
-        lipo -verify_arch arm64 "${item}"
+        if [[ "$(lipo -archs "${item}")" != "arm64" ]]; then
+            echo "Bundled Mach-O file is not arm64-only: ${item}" >&2
+            lipo -archs "${item}" >&2
+            exit 1
+        fi
     fi
 done < <(find "${MACHO_DIRECTORIES[@]}" -type f -print0)
 
