@@ -36,6 +36,7 @@ private:
     void loadNext(bool smooth);
     void loadPrevious(bool smooth);
     void loadCurrent(bool smooth);
+    void selectAudio(int index);
     void updateTitle();
     void toggleFullscreen();
     void printControls() const;

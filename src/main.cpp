@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
             if (SDL_Init(SDL_INIT_AUDIO) != 0) {
                 throw std::runtime_error("SDL audio initialization failed: " + std::string(SDL_GetError()));
             }
-            std::cout << "Available capture devices:\n";
+            std::cout << "Available audio sources:\n";
             for (const auto& device : md3::AudioCapture::devices()) {
                 std::cout << "  " << device.index << ": " << device.name << '\n';
             }

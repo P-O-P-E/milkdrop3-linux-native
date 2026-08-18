@@ -1,5 +1,7 @@
 #pragma once
 
+#include "AudioCapture.hpp"
+
 #include <SDL2/SDL.h>
 
 #include <filesystem>
@@ -18,6 +20,9 @@ struct UiCallbacks {
     std::function<void(bool)> previous;
     std::function<void(const std::filesystem::path&, bool)> select;
     std::function<void()> updateTitle;
+    std::function<std::vector<AudioDeviceInfo>()> audioDevices;
+    std::function<int()> currentAudioDevice;
+    std::function<void(int)> selectAudioDevice;
 };
 
 class UiController {

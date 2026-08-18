@@ -337,6 +337,34 @@ struct UiController::Impl {
             }
         }
 
+        if (callbacks.audioDevices && callbacks.currentAudioDevice && callbacks.selectAudioDevice) {
+            const auto audioDevices = callbacks.audioDevices();
+            const int currentAudioDevice = callbacks.currentAudioDevice();
+            const auto selected = std::find_if(audioDevices.begin(), audioDevices.end(),
+                                               [currentAudioDevice](const AudioDeviceInfo& device) {
+                                                   return device.index == currentAudioDevice;
+                                               });
+            const char* preview = selected != audioDevices.end() ? selected->name.c_str() : "Unavailable";
+            if (ImGui::BeginCombo("Audio source", preview)) {
+                for (const auto& device : audioDevices) {
+                    const bool isSelected = device.index == currentAudioDevice;
+                    const auto label = device.name + "##audio-" + std::to_string(device.index);
+                    if (ImGui::Selectable(label.c_str(), isSelected)) {
+                        try {
+                            callbacks.selectAudioDevice(device.index);
+                            overlays.push("Audio source: " + device.name, OverlaySeverity::Success);
+                        } catch (const std::exception& error) {
+                            overlays.push(error.what(), OverlaySeverity::Error);
+                        }
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
+
         if (const auto current = catalog.current(); current.has_value()) {
             auto metadata = library.metadata(*current);
             ImGui::SeparatorText(current->filename().string().c_str());

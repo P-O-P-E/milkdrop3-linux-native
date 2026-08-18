@@ -4,6 +4,11 @@ A native C++20 MilkDrop-compatible visualizer for Debian, Ubuntu, and Apple Sili
 [libprojectM 4](https://github.com/projectM-visualizer/projectm) for OpenGL rendering and SDL2 for windowing,
 input, and audio capture. Wine is not used on Linux, and the macOS build is native `arm64` without Rosetta.
 
+> [!WARNING]
+> **Pre-release software:** this is a development preview, not a stable or notarized public release. Expect missing
+> MilkDrop3 features, compatibility gaps, and occasional build/runtime defects. Keep original presets backed up and
+> report reproducible problems through [GitHub Issues](https://github.com/P-O-P-E/milkdrop3-linux-native/issues).
+
 > [!IMPORTANT]
 > This is an independent compatibility project. It is not affiliated with or endorsed by the MilkDrop3,
 > MilkDrop, Winamp, or projectM authors. The current release supports native `.milk` playback and portable
@@ -14,8 +19,9 @@ input, and audio capture. Wine is not used on Linux, and the macOS build is nati
 
 - Native x86-64 Linux executable and native Apple Silicon `arm64` application bundle
 - Standard `.milk` and `.prjm` preset discovery and rendering
-- PipeWire/PulseAudio/ALSA and macOS CoreAudio capture devices exposed through SDL2
-- Selectable capture device, including Linux monitor sources and macOS virtual audio inputs
+- PipeWire/PulseAudio/ALSA and macOS CoreAudio input devices exposed through SDL2
+- Selectable audio source in the in-window UI, including Linux monitor sources and macOS virtual audio inputs
+- Native Apple Silicon system-playback capture through ScreenCaptureKit (no virtual loopback driver required)
 - Smooth and beat-driven transitions through libprojectM
 - Shuffle, ordered playback, preset history, and preset lock
 - Resizable, HiDPI-aware window and desktop fullscreen mode
@@ -33,9 +39,23 @@ input, and audio capture. Wine is not used on Linux, and the macOS build is nati
 - Automated core tests, Ubuntu CI, and Debian/TGZ packaging configuration
 - M1-hosted macOS CI, dependency-bundled `.app`, ad-hoc signing, and DMG packaging
 
+## Prerequisites
+
+| Platform | Required before building |
+|---|---|
+| Debian/Ubuntu | 64-bit Linux, `sudo`/APT access, Git, internet access, a working OpenGL 3.3 driver, and enough space to build libprojectM. `bootstrap-debian.sh` installs the compiler, CMake, Ninja, SDL2, SDL2_image, GLM, and Mesa development packages. |
+| Apple Silicon macOS | M1 or later, macOS 14+, Xcode Command Line Tools, Git/internet access, native ARM Homebrew at `/opt/homebrew`, and an OpenGL 4.1-capable system. The first system-audio selection also requires Screen & System Audio Recording permission. |
+
+Presets are not bundled automatically with the source checkout; run `scripts/get-presets.sh` or provide your own
+compatible `.milk` preset directory. This pre-release has automated Ubuntu and M1 build coverage, but its full hardware,
+driver, preset, signing, and distribution test matrix is not yet complete.
+
 ## Quick start on Apple Silicon macOS
 
 The `macos-arm64` branch targets M1, M2, M3, M4, and later Apple Silicon Macs running macOS 14 or newer:
+
+Prerequisites are an Apple Silicon Mac, macOS 14+, Xcode Command Line Tools, internet access, and a native ARM
+Homebrew installation at `/opt/homebrew` (an Intel `/usr/local` Homebrew installation is not sufficient).
 
 ```bash
 xcode-select --install
@@ -48,7 +68,8 @@ open "build/macos-arm64-stage/MilkDrop3 Native.app"
 
 The bootstrap script requires native Homebrew under `/opt/homebrew`, builds libprojectM and the application as `arm64`,
 runs the tests, bundles non-system dynamic libraries, signs the bundle, and creates a DMG. See the
-[Apple Silicon guide](docs/MACOS_ARM64.md) for audio routing, Gatekeeper, Developer ID signing, and notarization.
+[Apple Silicon guide](docs/MACOS_ARM64.md) for the full prerequisite list, audio permissions/routing, Gatekeeper,
+Developer ID signing, and notarization.
 
 ## Quick start on Ubuntu or Debian
 
@@ -66,9 +87,9 @@ cd milkdrop3-linux-native
 After the first run, use `pavucontrol` or your desktop audio settings to select a monitor source if the default input is
 a microphone.
 
-## Audio devices
+## Audio sources
 
-List the capture devices SDL can see:
+List the available sources:
 
 ```bash
 ./build/release/milkdrop3-linux --list-audio-devices
@@ -81,8 +102,15 @@ Select one by index or by a unique part of its name:
 ./build/release/milkdrop3-linux --audio-device monitor
 ```
 
+The in-window **Audio source** menu provides the same choices. Press `A` to cycle them without opening the menu.
+
 On PipeWire and PulseAudio systems, output-monitor sources may need to be selected after the program starts. Install
 `pavucontrol`, open its **Recording** tab, and assign `milkdrop3-linux` to the desired output monitor.
+
+On Apple Silicon macOS, select **System audio (native macOS mix)** in the menu or launch with
+`--audio-device system`. macOS will request **Screen & System Audio Recording** permission the first time. This captures
+the Mac's current playback mix; use macOS Sound settings to choose whether that mix plays through speakers, headphones,
+or another output. Microphones and virtual inputs remain available as separate choices.
 
 ## Controls
 
@@ -93,7 +121,7 @@ On PipeWire and PulseAudio systems, output-monitor sources may need to be select
 | `R` | Random next preset |
 | `S` | Toggle shuffled/ordered playback |
 | `L` | Lock or unlock automatic preset changes |
-| `A` | Cycle audio capture devices |
+| `A` | Cycle audio sources (system playback, microphone, and virtual/monitor inputs) |
 | `[` / `]` | Decrease/increase beat sensitivity |
 | `F`, `Alt+Enter` | Toggle desktop fullscreen |
 | `Shift+left click` | Add a projectM touch waveform |
@@ -170,8 +198,8 @@ to its locally installed projectM library. Release packaging will bundle the req
 compatibility milestone.
 
 On Apple Silicon, `./scripts/bootstrap-macos-arm64.sh` produces an arm64-only `.app` and DMG. The unsigned developer
-build is ad-hoc signed; public redistribution should use a Developer ID identity and Apple notarization as described in
-the macOS guide.
+build is ad-hoc signed and remains a pre-release artifact; public redistribution should use a Developer ID identity and
+Apple notarization as described in the macOS guide.
 
 ## Project documentation
 

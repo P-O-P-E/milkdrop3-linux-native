@@ -1,10 +1,14 @@
 #include "AudioCapture.hpp"
 
 #include "ProjectMEngine.hpp"
+#ifdef MILKDROP3_MACOS_ARM64
+#include "MacSystemAudioCapture.hpp"
+#endif
 
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <iostream>
 #include <stdexcept>
 #include <string_view>
 
@@ -25,6 +29,9 @@ AudioCapture::~AudioCapture() { stop(); }
 
 std::vector<AudioDeviceInfo> AudioCapture::devices() {
     std::vector<AudioDeviceInfo> result{{-1, "Default capture device"}};
+#ifdef MILKDROP3_MACOS_ARM64
+    result.push_back({-2, "System audio (native macOS mix)"});
+#endif
     const int count = SDL_GetNumAudioDevices(SDL_TRUE);
     for (int index = 0; index < count; ++index) {
         const char* name = SDL_GetAudioDeviceName(index, SDL_TRUE);
@@ -43,7 +50,10 @@ int AudioCapture::resolveDevice(const std::string& selector) {
     const auto* end = selector.data() + selector.size();
     const auto [pointer, error] = std::from_chars(begin, end, numeric);
     if (error == std::errc{} && pointer == end) {
-        if (numeric < -1 || numeric >= SDL_GetNumAudioDevices(SDL_TRUE)) {
+        const auto available = devices();
+        if (std::none_of(available.begin(), available.end(), [numeric](const AudioDeviceInfo& device) {
+                return device.index == numeric;
+            })) {
             throw std::runtime_error("Audio device index is out of range: " + selector);
         }
         return numeric;
@@ -51,7 +61,7 @@ int AudioCapture::resolveDevice(const std::string& selector) {
 
     const auto needle = lower(selector);
     for (const auto& device : devices()) {
-        if (device.index >= 0 && lower(device.name).find(needle) != std::string::npos) {
+        if (lower(device.name).find(needle) != std::string::npos) {
             return device.index;
         }
     }
@@ -59,9 +69,33 @@ int AudioCapture::resolveDevice(const std::string& selector) {
 }
 
 void AudioCapture::start(const std::string& selector) { open(resolveDevice(selector)); }
+void AudioCapture::select(const int index) { open(index); }
 
 void AudioCapture::open(const int index) {
     stop();
+
+#ifdef MILKDROP3_MACOS_ARM64
+    if (index == -2) {
+        systemAudio_ = std::make_unique<MacSystemAudioCapture>(
+            [this](const float* samples, const unsigned int frames) {
+                engine_.addAudio(samples, frames);
+            },
+            [](const std::string& message, const bool isError) {
+                (isError ? std::cerr : std::cout) << message << '\n';
+            });
+        systemAudio_->start();
+        deviceIndex_ = index;
+        deviceName_ = "System audio (native macOS mix)";
+        return;
+    }
+#endif
+
+    const auto available = devices();
+    if (std::none_of(available.begin(), available.end(), [index](const AudioDeviceInfo& device) {
+            return device.index == index;
+        })) {
+        throw std::runtime_error("Audio device index is out of range: " + std::to_string(index));
+    }
 
     SDL_AudioSpec requested{};
     SDL_AudioSpec actual{};
@@ -90,6 +124,9 @@ void AudioCapture::open(const int index) {
 }
 
 void AudioCapture::stop() {
+#ifdef MILKDROP3_MACOS_ARM64
+    systemAudio_.reset();
+#endif
     if (deviceId_ != 0) {
         SDL_PauseAudioDevice(deviceId_, SDL_TRUE);
         SDL_CloseAudioDevice(deviceId_);
@@ -98,9 +135,15 @@ void AudioCapture::stop() {
 }
 
 void AudioCapture::cycle() {
-    const int count = SDL_GetNumAudioDevices(SDL_TRUE);
-    const int next = ((deviceIndex_ + 2) % (count + 1)) - 1;
-    open(next);
+    const auto available = devices();
+    const auto current = std::find_if(available.begin(), available.end(), [this](const AudioDeviceInfo& device) {
+        return device.index == deviceIndex_;
+    });
+    const auto position = current == available.end()
+                              ? std::size_t{0}
+                              : static_cast<std::size_t>(std::distance(available.begin(), current) + 1) %
+                                    available.size();
+    open(available[position].index);
 }
 
 std::string AudioCapture::deviceName() const { return deviceName_; }
@@ -117,4 +160,3 @@ void AudioCapture::callback(void* userdata, Uint8* stream, const int length) {
 }
 
 } // namespace md3
-

@@ -1,5 +1,9 @@
 # Apple Silicon macOS guide
 
+> [!WARNING]
+> This branch is a pre-release development preview. Its `.app` and DMG are ad-hoc signed for local testing, are not
+> notarized public releases, and do not yet represent full MilkDrop3 compatibility.
+
 The `macos-arm64` branch produces a native Apple Silicon application. It intentionally rejects Intel and universal
 build configurations so an accidental Rosetta dependency cannot enter the release. Supported hardware includes M1,
 M2, M3, M4, and later `arm64` Macs. The deployment target is macOS 14.0 or newer so the bundled Homebrew runtime and
@@ -10,7 +14,14 @@ CI runner share a supported baseline.
 - Apple Silicon Mac running macOS 14 or newer
 - Xcode command-line tools: `xcode-select --install`
 - Native Homebrew installed at `/opt/homebrew`
+- Git, CMake, Ninja, and a C++20-capable AppleClang toolchain (the bootstrap script installs/checks these as appropriate)
 - Internet access for Homebrew, Dear ImGui, and the libprojectM source checkout
+- Free disk space for Homebrew packages, libprojectM sources, build trees, the application bundle, and DMG
+- **Screen & System Audio Recording** permission when using the native system-playback source
+- **Microphone** permission only when using a microphone or virtual input device
+
+The build is native `arm64`; an Intel Homebrew installation under `/usr/local` cannot supply its dependencies. Install
+or migrate to Apple Silicon Homebrew at `/opt/homebrew` before running the bootstrap script.
 
 ## Build and package
 
@@ -34,22 +45,35 @@ The script performs these checks and actions:
 
 Build products are written below `build/macos-arm64` and `build/macos-arm64-stage`.
 
-## Audio input and desktop audio
+## Audio source selection
 
-macOS asks for microphone permission the first time an audio capture device is opened. Allow **MilkDrop3 Native** under
-**System Settings → Privacy & Security → Microphone**. The application continues without live audio if permission is
-denied.
+Open the in-window preset browser with `Tab`, then use **Audio source** to choose between:
 
-SDL2 can capture microphones and virtual audio devices, but macOS does not expose a normal speaker-monitor source like
-PipeWire or PulseAudio. To visualize system audio, install a virtual device such as BlackHole or use Loopback, create a
-Multi-Output Device in Audio MIDI Setup, and select the virtual input:
+- **System audio (native macOS mix)** — captures the current Mac playback mix through ScreenCaptureKit.
+- **Default capture device** or a named CoreAudio input — captures a microphone or virtual input through SDL.
+
+The `A` key cycles the same sources. The command line can select the native system mix directly:
+
+```bash
+"build/macos-arm64-stage/MilkDrop3 Native.app/Contents/MacOS/MilkDrop3 Native" --audio-device system
+```
+
+On first selection, allow **MilkDrop3 Native** under **System Settings → Privacy & Security → Screen & System Audio
+Recording**. If macOS asks you to quit and reopen the application after granting access, do so. ScreenCaptureKit captures
+the system mix rather than a particular speaker/headphone endpoint; select the playback endpoint in macOS Sound settings.
+The application excludes its own process audio, and macOS or protected-content policies may omit some streams.
+
+When a microphone or virtual input is selected, allow the application under **Privacy & Security → Microphone**. The
+application continues without live audio when the applicable permission is denied.
+
+BlackHole or Loopback is no longer required for normal system-mix visualization. It remains useful for custom routing,
+isolating one application, or feeding a specific virtual/multi-output path. After configuring such a device, select it
+like any other named input:
 
 ```bash
 "build/macos-arm64-stage/MilkDrop3 Native.app/Contents/MacOS/MilkDrop3 Native" --list-audio-devices
 "build/macos-arm64-stage/MilkDrop3 Native.app/Contents/MacOS/MilkDrop3 Native" --audio-device BlackHole
 ```
-
-The `A` key also cycles available capture devices while the application is running.
 
 ## Data and presets
 

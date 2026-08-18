@@ -13,6 +13,10 @@ project(milkdrop3-linux-native
     LANGUAGES CXX
 )
 
+if(APPLE)
+    enable_language(OBJCXX)
+endif()
+
 include(GNUInstallDirs)
 include(CTest)
 
@@ -66,6 +70,9 @@ if(MILKDROP3_BUILD_APP)
             NO_DEFAULT_PATH
             REQUIRED
         )
+        find_library(MILKDROP3_SCREENCAPTUREKIT_FRAMEWORK ScreenCaptureKit REQUIRED)
+        find_library(MILKDROP3_COREMEDIA_FRAMEWORK CoreMedia REQUIRED)
+        find_library(MILKDROP3_FOUNDATION_FRAMEWORK Foundation REQUIRED)
     endif()
 
     include(FetchContent)
@@ -135,6 +142,7 @@ if(MILKDROP3_BUILD_APP)
             MACOSX_PACKAGE_LOCATION "Resources/Licenses"
         )
         list(APPEND MILKDROP3_APP_SOURCES
+            src/MacSystemAudioCapture.mm
             "${MILKDROP3_MACOS_ICON}"
             ${MILKDROP3_MACOS_LICENSES}
         )
@@ -158,6 +166,19 @@ if(MILKDROP3_BUILD_APP)
             message(FATAL_ERROR "The macOS build requires the SDL2::SDL2main target")
         endif()
         target_link_libraries(milkdrop3-linux PRIVATE SDL2::SDL2main)
+        target_link_libraries(milkdrop3-linux PRIVATE
+            "${MILKDROP3_SCREENCAPTUREKIT_FRAMEWORK}"
+            "${MILKDROP3_COREMEDIA_FRAMEWORK}"
+            "${MILKDROP3_FOUNDATION_FRAMEWORK}"
+        )
+        target_compile_options(milkdrop3-linux PRIVATE
+            $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>
+        )
+        set_target_properties(milkdrop3-linux PROPERTIES
+            OBJCXX_STANDARD 20
+            OBJCXX_STANDARD_REQUIRED YES
+            OBJCXX_EXTENSIONS NO
+        )
         target_compile_definitions(milkdrop3-linux PRIVATE
             GL_SILENCE_DEPRECATION=1
             MILKDROP3_MACOS_ARM64=1

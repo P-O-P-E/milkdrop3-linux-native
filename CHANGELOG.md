@@ -3,6 +3,12 @@
 All notable changes are documented here. This project follows semantic versioning after the initial compatibility
 releases.
 
+## Unreleased — pre-release
+
+- Added native Apple Silicon system-playback capture through ScreenCaptureKit alongside SDL microphone/virtual inputs.
+- Added an in-window audio-source selector and `--audio-device system` support.
+- Documented pre-release status, build prerequisites, audio permissions, and macOS output-routing behavior.
+
 ## 0.3.0 — 2026-08-17
 
 - Bundled Homebrew's dynamically loaded SDL3 runtime on macOS and added a packaged-executable smoke test.

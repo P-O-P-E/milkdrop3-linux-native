@@ -317,8 +317,8 @@ Usage: milkdrop3-linux [options]
     return heading + R"(
   --preset-dir PATH           Add a MilkDrop preset directory
   --texture-dir PATH          Add a texture search directory
-  --audio-device NAME|INDEX   Capture from a named or numbered input
-  --list-audio-devices        Print capture devices and exit
+  --audio-device NAME|INDEX   Use a named or numbered audio source ("system" on macOS)
+  --list-audio-devices        Print audio sources and exit
   --library-file PATH         Ratings/favorites database path
   --generated-preset-dir PATH Edited and mashup preset output directory
   --config PATH               Use a specific key=value configuration file

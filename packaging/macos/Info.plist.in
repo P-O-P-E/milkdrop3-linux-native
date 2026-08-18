@@ -34,6 +34,8 @@
     <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>MilkDrop3 Native uses an audio input device to animate visualizations.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>MilkDrop3 Native captures the system audio mix to animate visualizations.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

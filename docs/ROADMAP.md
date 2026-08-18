@@ -28,6 +28,7 @@ formats, without copying proprietary binaries or shaders.
 - [x] Native arm64-only build with Rosetta configurations rejected
 - [x] Cocoa/SDL2 lifecycle and OpenGL 4.1 rendering path
 - [x] Application Support paths, microphone permission, and audio-input entitlement
+- [x] Native ScreenCaptureKit system-playback capture and in-window audio-source selection
 - [x] Dependency-bundled `.app`, code-signing support, and DMG generation
 - [x] Native M1 GitHub Actions build and architecture verification
 - [ ] Developer ID signing and Apple notarization for public release artifacts

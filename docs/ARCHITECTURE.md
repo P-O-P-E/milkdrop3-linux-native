@@ -11,7 +11,7 @@ audio, and desktop integration.
 ```mermaid
 flowchart TD
     SDL[SDL2 window and events] --> App[Application loop]
-    Audio[SDL2 capture device] --> Engine[projectM engine]
+    Audio[SDL inputs or macOS system mix] --> Engine[projectM engine]
     Catalog[Preset catalog and history] --> App
     UI[Browser and authoring UI] --> App
     Documents[Preset documents and mashups] --> UI
@@ -31,7 +31,8 @@ flowchart TD
 | `MashupEngine` | Selective preset composition and collision-free generated output paths |
 | `GeneratedPresetStore` | Generated-directory ownership checks, safe rename, and recoverable move-to-trash |
 | `OverlayManager` | Bounded, expiring status and error messages |
-| `AudioCapture` | SDL capture-device discovery, selection, cycling, and floating-point PCM delivery |
+| `AudioCapture` | Cross-platform audio-source discovery, selection, cycling, and floating-point PCM delivery |
+| `MacSystemAudioCapture` | Native ScreenCaptureKit system-playback capture and CoreMedia PCM conversion |
 | `ProjectMEngine` | RAII wrapper for libprojectM configuration, PCM input, preset loading, and rendering |
 | `UiController` | Dear ImGui browser/editor, playlists, mashups, and SDL_image/OpenGL overlays |
 | `Application` | SDL/OpenGL lifecycle, events, drag-and-drop, controls, frame pacing, and status title |
@@ -51,7 +52,7 @@ renderer, editor, preset catalog, and audio abstraction.
 
 The macOS install step uses CMake BundleUtilities to copy non-system dynamic dependencies into
 `Contents/Frameworks`, rewrite Mach-O install names, and sign the resulting bundle. Its Info.plist declares the
-microphone usage reason and an audio-input entitlement is included for hardened Developer ID signing.
+microphone and screen-capture usage reasons; an audio-input entitlement is included for hardened Developer ID signing.
 
 ## Authoring and mashups
 
@@ -68,9 +69,10 @@ used.
 ## Audio
 
 SDL requests interleaved 48 kHz stereo `float32` capture samples and forwards them from its audio callback to
-`projectm_pcm_add_float()`. PipeWire and PulseAudio expose desktop-output monitor sources on Linux. macOS exposes
-microphones and virtual capture devices; system-output visualization requires a virtual driver such as BlackHole or
-Loopback. Direct PipeWire stream selection is reserved for a later milestone.
+`projectm_pcm_add_float()`. PipeWire and PulseAudio expose desktop-output monitor sources on Linux. On macOS, SDL still
+handles microphones and virtual capture devices while `MacSystemAudioCapture` uses ScreenCaptureKit for the native
+system-playback mix. CoreMedia audio buffers are normalized to interleaved stereo `float32` before entering the same
+projectM PCM path. Direct PipeWire output-node selection is reserved for a later milestone.
 
 ## MilkDrop3 compatibility strategy
 

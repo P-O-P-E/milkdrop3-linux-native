@@ -124,6 +124,9 @@ void Application::initialize() {
             }
         };
         callbacks.updateTitle = [this] { updateTitle(); };
+        callbacks.audioDevices = [] { return AudioCapture::devices(); };
+        callbacks.currentAudioDevice = [this] { return audio_->deviceIndex(); };
+        callbacks.selectAudioDevice = [this](const int index) { selectAudio(index); };
         ui_ = std::make_unique<UiController>(window_, glContext_, catalog_, library_, *engine_, overlays_,
                                              config_.generatedPresetDirectory, config_.uiStateFile,
                                              config_.statusOverlay, std::move(callbacks));
@@ -282,6 +285,7 @@ void Application::handleKey(const SDL_KeyboardEvent& event) {
         try {
             audio_->cycle();
             std::cout << "Capturing audio from: " << audio_->deviceName() << '\n';
+            overlays_.push("Audio source: " + audio_->deviceName(), OverlaySeverity::Success);
             updateTitle();
         } catch (const std::exception& error) {
             std::cerr << "Unable to change audio device: " << error.what() << '\n';
@@ -293,6 +297,12 @@ void Application::handleKey(const SDL_KeyboardEvent& event) {
     } else if (key == SDLK_F1 || key == SDLK_h) {
         printControls();
     }
+}
+
+void Application::selectAudio(const int index) {
+    audio_->select(index);
+    std::cout << "Capturing audio from: " << audio_->deviceName() << '\n';
+    updateTitle();
 }
 
 void Application::handleDrop(const char* path) {
@@ -385,7 +395,7 @@ Controls
   R                   Random next preset
   S                   Toggle shuffle
   L                   Lock automatic preset changes
-  A                   Cycle audio capture devices
+  A                   Cycle audio sources
   [ / ]               Adjust beat sensitivity
   F / Alt+Enter       Toggle fullscreen
   Shift+left click    Add a projectM touch waveform
