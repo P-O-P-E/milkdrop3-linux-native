@@ -5,6 +5,7 @@ releases.
 
 ## Unreleased — pre-release
 
+- Replaced abrupt runtime preset cuts with a configurable, eased OpenGL fade-out/load/fade-in transition.
 - Added native Apple Silicon system-playback capture through ScreenCaptureKit alongside SDL microphone/virtual inputs.
 - Added an in-window audio-source selector and `--audio-device system` support.
 - Documented pre-release status, build prerequisites, audio permissions, and macOS output-routing behavior.

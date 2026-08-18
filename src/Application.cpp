@@ -1,11 +1,13 @@
 #include "Application.hpp"
 
 #include "AudioCapture.hpp"
+#include "FadeOverlay.hpp"
 #include "ProjectMEngine.hpp"
 #include "UiController.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -77,7 +79,12 @@ void Application::initialize() {
     SDL_GL_GetDrawableSize(window_, &drawableWidth, &drawableHeight);
     engine_ = std::make_unique<ProjectMEngine>(config_, static_cast<std::size_t>(drawableWidth),
                                                static_cast<std::size_t>(drawableHeight));
-    engine_->setSwitchRequestedCallback([this](const bool hardCut) { loadNext(!hardCut); });
+    fadeOverlay_ = std::make_unique<FadeOverlay>();
+    engine_->setSwitchRequestedCallback([this](const bool hardCut) {
+        if (fadePhase_ == FadePhase::Idle) {
+            loadNext(!hardCut);
+        }
+    });
 
     try {
         library_.load();
@@ -146,6 +153,7 @@ void Application::shutdown() {
     running_ = false;
     ui_.reset();
     audio_.reset();
+    fadeOverlay_.reset();
     engine_.reset();
     if (glContext_ != nullptr) {
         SDL_GL_DeleteContext(glContext_);
@@ -167,10 +175,12 @@ int Application::run() {
     while (running_) {
         const auto frameStart = std::chrono::steady_clock::now();
         pollEvents();
+        updatePresetFade(std::chrono::steady_clock::now());
 
         glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         engine_->render();
+        fadeOverlay_->render(fadeOpacity_);
         if (ui_ != nullptr) {
             ui_->beginFrame();
             ui_->draw();
@@ -320,7 +330,7 @@ void Application::handleDrop(const char* path) {
         return;
     }
     std::cout << "Added " << added << " dropped presets from " << path << '\n';
-    loadNext(false);
+    loadNext(true);
 }
 
 void Application::resize() {
@@ -344,22 +354,76 @@ void Application::loadPrevious(const bool smooth) {
 
 void Application::loadCurrent(const bool smooth) {
     if (const auto current = catalog_.current(); current.has_value()) {
-        engine_->loadPreset(*current, smooth);
-        if (const auto error = engine_->lastError(); !error.empty()) {
-            overlays_.push(error, OverlaySeverity::Error);
-            return;
+        if (running_ && config_.fadeDuration > 0.0) {
+            beginPresetFade(*current);
+        } else {
+            applyPreset(*current, smooth);
         }
-        library_.recordPlayed(*current);
-        try {
-            library_.save();
-        } catch (const std::exception& error) {
-            overlays_.push(error.what(), OverlaySeverity::Warning);
-        }
-        std::cout << "Preset: " << current->filename().string() << '\n';
-        overlays_.push(current->stem().string(), OverlaySeverity::Information,
-                       std::chrono::milliseconds(2200));
-        updateTitle();
     }
+}
+
+void Application::beginPresetFade(const std::filesystem::path& preset) {
+    pendingPreset_ = preset;
+    if (fadePhase_ == FadePhase::Out) {
+        return;
+    }
+
+    fadePhase_ = FadePhase::Out;
+    fadePhaseStart_ = std::chrono::steady_clock::now();
+    fadePhaseStartOpacity_ = fadeOpacity_;
+    fadePhaseDuration_ = std::max(0.001, config_.fadeDuration * 0.5 *
+                                            static_cast<double>(1.0F - fadePhaseStartOpacity_));
+}
+
+void Application::updatePresetFade(const std::chrono::steady_clock::time_point now) {
+    if (fadePhase_ == FadePhase::Idle) {
+        return;
+    }
+
+    const double elapsed = std::chrono::duration<double>(now - fadePhaseStart_).count();
+    const float progress = static_cast<float>(std::clamp(elapsed / fadePhaseDuration_, 0.0, 1.0));
+    const float eased = progress * progress * (3.0F - 2.0F * progress);
+
+    if (fadePhase_ == FadePhase::Out) {
+        fadeOpacity_ = fadePhaseStartOpacity_ + (1.0F - fadePhaseStartOpacity_) * eased;
+        if (progress >= 1.0F) {
+            fadeOpacity_ = 1.0F;
+            if (pendingPreset_.has_value()) {
+                const auto preset = *pendingPreset_;
+                pendingPreset_.reset();
+                applyPreset(preset, false);
+            }
+            fadePhase_ = FadePhase::In;
+            fadePhaseStart_ = now;
+            fadePhaseStartOpacity_ = 1.0F;
+            fadePhaseDuration_ = std::max(0.001, config_.fadeDuration * 0.5);
+        }
+        return;
+    }
+
+    fadeOpacity_ = fadePhaseStartOpacity_ * (1.0F - eased);
+    if (progress >= 1.0F) {
+        fadeOpacity_ = 0.0F;
+        fadePhase_ = FadePhase::Idle;
+    }
+}
+
+void Application::applyPreset(const std::filesystem::path& preset, const bool smooth) {
+    engine_->loadPreset(preset, smooth);
+    if (const auto error = engine_->lastError(); !error.empty()) {
+        overlays_.push(error, OverlaySeverity::Error);
+        return;
+    }
+    library_.recordPlayed(preset);
+    try {
+        library_.save();
+    } catch (const std::exception& error) {
+        overlays_.push(error.what(), OverlaySeverity::Warning);
+    }
+    std::cout << "Preset: " << preset.filename().string() << '\n';
+    overlays_.push(preset.stem().string(), OverlaySeverity::Information,
+                   std::chrono::milliseconds(2200));
+    updateTitle();
 }
 
 void Application::updateTitle() {

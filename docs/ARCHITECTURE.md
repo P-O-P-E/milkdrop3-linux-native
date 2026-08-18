@@ -12,6 +12,7 @@ audio, and desktop integration.
 flowchart TD
     SDL[SDL2 window and events] --> App[Application loop]
     Audio[SDL inputs or macOS system mix] --> Engine[projectM engine]
+    Engine --> Fade[OpenGL fade overlay]
     Catalog[Preset catalog and history] --> App
     UI[Browser and authoring UI] --> App
     Documents[Preset documents and mashups] --> UI
@@ -33,6 +34,7 @@ flowchart TD
 | `OverlayManager` | Bounded, expiring status and error messages |
 | `AudioCapture` | Cross-platform audio-source discovery, selection, cycling, and floating-point PCM delivery |
 | `MacSystemAudioCapture` | Native ScreenCaptureKit system-playback capture and CoreMedia PCM conversion |
+| `FadeOverlay` | State-preserving OpenGL full-screen fade used during every runtime preset handoff |
 | `ProjectMEngine` | RAII wrapper for libprojectM configuration, PCM input, preset loading, and rendering |
 | `UiController` | Dear ImGui browser/editor, playlists, mashups, and SDL_image/OpenGL overlays |
 | `Application` | SDL/OpenGL lifecycle, events, drag-and-drop, controls, frame pacing, and status title |
@@ -65,6 +67,14 @@ files owned by that directory; removal moves files into its hidden `.trash` dire
 The six domains correspond to the useful portions of MilkDrop 2's historical state model: general post-processing,
 motion and equations, waves, shapes, warp shader, and composite shader. No Win32, D3D9, Wasabi, or legacy NS-EEL code is
 used.
+
+## Preset transitions
+
+The application owns a two-phase transition state machine. It eases the rendered preset to a fully opaque black OpenGL
+overlay, loads the pending preset at the covered midpoint, and eases the overlay back to transparent. Repeated manual
+selection during a fade updates the pending target without flashing; repeat automatic requests are suppressed until the
+active transition completes. Setting `fade_duration=0` bypasses this layer and restores libprojectM's native soft/hard
+transition behavior.
 
 ## Audio
 

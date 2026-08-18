@@ -22,6 +22,7 @@ struct Config {
 
     double presetDuration{30.0};
     double transitionDuration{3.0};
+    double fadeDuration{2.4};
     double hardCutDuration{10.0};
     float beatSensitivity{1.0F};
     float hardCutSensitivity{1.0F};

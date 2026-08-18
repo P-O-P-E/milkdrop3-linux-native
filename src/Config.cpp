@@ -128,6 +128,8 @@ void applySetting(Config& config, const std::string& rawKey, const std::string& 
         config.presetDuration = parseDouble(value, key);
     } else if (key == "transition_duration") {
         config.transitionDuration = parseDouble(value, key);
+    } else if (key == "fade_duration") {
+        config.fadeDuration = parseDouble(value, key);
     } else if (key == "hard_cut_duration") {
         config.hardCutDuration = parseDouble(value, key);
     } else if (key == "beat_sensitivity") {
@@ -202,7 +204,8 @@ void validate(const Config& config) {
     if (config.meshWidth < 8 || config.meshWidth > 300 || config.meshHeight < 8 || config.meshHeight > 300) {
         throw std::runtime_error("Mesh dimensions must be between 8 and 300");
     }
-    if (config.presetDuration < 0.0 || config.transitionDuration < 0.0 || config.hardCutDuration < 0.0) {
+    if (config.presetDuration < 0.0 || config.transitionDuration < 0.0 || config.fadeDuration < 0.0 ||
+        config.hardCutDuration < 0.0) {
         throw std::runtime_error("Durations cannot be negative");
     }
 }
@@ -271,6 +274,8 @@ Config Config::fromCommandLine(const int argc, char** argv) {
             config.presetDuration = parseDouble(requiredValue(index, argc, argv, argument), argument);
         } else if (argument == "--transition-duration") {
             config.transitionDuration = parseDouble(requiredValue(index, argc, argv, argument), argument);
+        } else if (argument == "--fade-duration") {
+            config.fadeDuration = parseDouble(requiredValue(index, argc, argv, argument), argument);
         } else if (argument == "--beat-sensitivity") {
             config.beatSensitivity = static_cast<float>(parseDouble(requiredValue(index, argc, argv, argument), argument));
         } else if (argument == "--fullscreen") {
@@ -327,6 +332,7 @@ Usage: milkdrop3-linux [options]
   --fps RATE                  Target frame rate (default: 60)
   --preset-duration SECONDS   Automatic preset duration
   --transition-duration SEC   Smooth transition duration
+  --fade-duration SEC         Total fade-out/fade-in time (default: 2.4; 0 disables)
   --beat-sensitivity VALUE    Initial projectM beat sensitivity
   --fullscreen                Start in desktop fullscreen mode
   --no-shuffle                Use sorted preset order

@@ -22,7 +22,7 @@ input, and audio capture. Wine is not used on Linux, and the macOS build is nati
 - PipeWire/PulseAudio/ALSA and macOS CoreAudio input devices exposed through SDL2
 - Selectable audio source in the in-window UI, including Linux monitor sources and macOS virtual audio inputs
 - Native Apple Silicon system-playback capture through ScreenCaptureKit (no virtual loopback driver required)
-- Smooth and beat-driven transitions through libprojectM
+- Smooth, eased fade-out/fade-in transitions for manual, timed, and beat-driven preset changes
 - Shuffle, ordered playback, preset history, and preset lock
 - Resizable, HiDPI-aware window and desktop fullscreen mode
 - Drag-and-drop preset files and directories
@@ -132,6 +132,21 @@ or another output. Microphones and virtual inputs remain available as separate c
 | `Tab` | Toggle the in-window preset browser |
 | `F1`, `H` | Print controls in the launching terminal |
 | `Escape`, `Ctrl+Q`, `Command+Q` | Quit |
+
+## Preset transitions
+
+Runtime preset changes now fade the current visualization to black, load the next preset while fully covered, and then
+fade the new visualization in. The opacity follows a smoothstep curve so the beginning, midpoint, and end do not snap.
+This also softens beat-triggered changes that projectM would otherwise request as hard cuts.
+
+`fade_duration` is the total time for both halves of the transition and defaults to `2.4` seconds. For a slower fade:
+
+```ini
+fade_duration=4.0
+```
+
+Set `fade_duration=0` to disable the application fade and return to projectM's native transition behavior. In that mode,
+`transition_duration` controls native smooth transitions and beat-triggered hard cuts can be abrupt.
 
 ## Configuration
 

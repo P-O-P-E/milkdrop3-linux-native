@@ -10,7 +10,7 @@ formats, without copying proprietary binaries or shaders.
 - [x] libprojectM 4 renderer integration
 - [x] Capture-device selection and monitor-source support through SDL
 - [x] Recursive preset and texture discovery
-- [x] Transitions, hard cuts, shuffle, history, and locking
+- [x] Eased fade-out/fade-in transitions, beat-driven switching, shuffle, history, and locking
 - [x] Fullscreen, HiDPI resizing, mouse controls, and drag-and-drop
 - [x] XDG configuration, tests, CI, and packaging scaffolding
 

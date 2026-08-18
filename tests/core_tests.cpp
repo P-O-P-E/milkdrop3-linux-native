@@ -86,24 +86,26 @@ void testNonRecursiveScan() {
 void testCommandLineConfiguration() {
     const auto config = parse({"milkdrop3-linux", "--width", "1920", "--height", "1080", "--fps", "90",
                                "--preset-dir", "/tmp/presets", "--audio-device", "monitor", "--fullscreen",
-                               "--no-shuffle", "--disable-hard-cuts"});
+                               "--no-shuffle", "--disable-hard-cuts", "--fade-duration", "4.5"});
     require(config.width == 1920 && config.height == 1080, "window dimensions should be parsed");
     require(config.fps == 90, "fps should be parsed");
     require(config.fullscreen, "fullscreen should be enabled");
     require(!config.shuffle, "shuffle should be disabled");
     require(!config.hardCuts, "hard cuts should be disabled");
     require(config.audioDevice == "monitor", "audio device should be parsed");
+    require(config.fadeDuration == 4.5, "fade duration should be parsed");
 }
 
 void testConfigFileAndCliOverride() {
     TemporaryDirectory temporary;
     const auto configPath = temporary.path() / "config.ini";
-    writeFile(configPath, "fps=75\nshuffle=false\npreset_duration=42\npreset_dir=~/visuals\n");
+    writeFile(configPath, "fps=75\nshuffle=false\npreset_duration=42\nfade_duration=3.5\npreset_dir=~/visuals\n");
 
     const auto config = parse({"milkdrop3-linux", "--config", configPath.string(), "--fps", "120"});
     require(config.fps == 120, "command line should override the config file");
     require(!config.shuffle, "config file boolean should be loaded");
     require(config.presetDuration == 42.0, "config file number should be loaded");
+    require(config.fadeDuration == 3.5, "fade duration should load from the config file");
 }
 
 void testPlatformDefaultPaths() {
