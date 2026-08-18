@@ -74,6 +74,9 @@ if(MILKDROP3_BUILD_APP)
         ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
         ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
     )
+    # ImGui's public headers use C++11 features such as constexpr. AppleClang
+    # otherwise defaults this standalone target to its legacy C++98 mode.
+    target_compile_features(imgui PUBLIC cxx_std_11)
     target_include_directories(imgui PUBLIC
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends

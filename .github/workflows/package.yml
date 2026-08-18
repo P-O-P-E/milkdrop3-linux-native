@@ -12,7 +12,7 @@ jobs:
   package:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -45,7 +45,7 @@ jobs:
       - name: Create packages
         working-directory: build/package
         run: cpack -G TGZ
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: milkdrop3-linux-packages
           path: build/package/milkdrop3-linux-native-*.tar.gz
