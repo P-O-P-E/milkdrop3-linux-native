@@ -244,6 +244,12 @@ Apple notarization as described in the macOS guide.
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
+## Acknowledgments
+
+Special thanks to **Ryan Geiss**, creator of the original MilkDrop, for making its source code available and inspiring this project. His work provides the foundation for the MilkDrop visualizations and compatibility work that continue today.
+
+Visit [Ryan Geiss's website — Geisswerks](https://www.geisswerks.com/) to explore his original projects and work.
+
 ## License
 
 The original code in this repository is MIT-licensed. libprojectM and preset packs retain their own licenses; see
