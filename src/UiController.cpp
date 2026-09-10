@@ -93,7 +93,9 @@ struct UiController::Impl {
         io.IniFilename = stateFileString.c_str();
         ImGui::StyleColorsDark();
         ImGui::GetStyle().WindowRounding = 5.0F;
-        ImGui::GetStyle().FrameRounding = 3.0F;
+        ImGui::GetStyle().FrameRounding = 5.0F;
+        ImGui::GetStyle().FramePadding = {10.0F, 7.0F};
+        ImGui::GetStyle().ItemSpacing = {10.0F, 8.0F};
         if (!ImGui_ImplSDL2_InitForOpenGL(window, context)) {
             ImGui::DestroyContext();
             throw std::runtime_error("Unable to initialize the ImGui SDL backend");
@@ -307,20 +309,20 @@ struct UiController::Impl {
     }
 
     void drawBrowser() {
-        ImGui::SetNextWindowSize({510.0F, 620.0F}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({620.0F, 760.0F}, ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Preset Library", &showBrowser)) {
             ImGui::End();
             return;
         }
 
-        if (ImGui::Button("Previous") && callbacks.previous) {
+        ImGui::TextDisabled("Tab hides these controls. Space plays the next preset.");
+        if (ImGui::Button("Previous", {110.0F, 0.0F}) && callbacks.previous) {
             callbacks.previous(true);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Next") && callbacks.next) {
+        if (ImGui::Button("Next preset", {130.0F, 0.0F}) && callbacks.next) {
             callbacks.next(true);
         }
-        ImGui::SameLine();
         bool shuffle = catalog.shuffle();
         if (ImGui::Checkbox("Shuffle", &shuffle)) {
             catalog.setShuffle(shuffle);
@@ -330,13 +332,21 @@ struct UiController::Impl {
         }
         ImGui::SameLine();
         bool locked = engine.locked();
-        if (ImGui::Checkbox("Locked", &locked)) {
+        if (ImGui::Checkbox("Stay on this preset", &locked)) {
             engine.setLocked(locked);
             if (callbacks.updateTitle) {
                 callbacks.updateTitle();
             }
         }
 
+        ImGui::SeparatorText("Playback");
+        if (callbacks.fadeDuration && callbacks.setFadeDuration) {
+            float seconds = static_cast<float>(callbacks.fadeDuration());
+            if (ImGui::SliderFloat("Fade duration", &seconds, 0.0F, 8.0F, "%.1f seconds")) {
+                callbacks.setFadeDuration(static_cast<double>(seconds));
+            }
+            ImGui::TextDisabled("Applies to the next transition; saved config is unchanged.");
+        }
         if (callbacks.audioDevices && callbacks.currentAudioDevice && callbacks.selectAudioDevice) {
             const auto audioDevices = callbacks.audioDevices();
             const int currentAudioDevice = callbacks.currentAudioDevice();
@@ -367,7 +377,8 @@ struct UiController::Impl {
 
         if (const auto current = catalog.current(); current.has_value()) {
             auto metadata = library.metadata(*current);
-            ImGui::SeparatorText(current->filename().string().c_str());
+            ImGui::SeparatorText("Selected preset");
+            ImGui::TextWrapped("%s", current->stem().string().c_str());
             int rating = metadata.rating;
             if (ImGui::SliderInt("Rating", &rating, 0, 5)) {
                 library.setRating(*current, rating);
@@ -383,7 +394,7 @@ struct UiController::Impl {
                 loadEditor(*current);
                 showEditor = true;
             }
-            if (generatedStore.owns(*current)) {
+            if (generatedStore.owns(*current) && ImGui::CollapsingHeader("Manage saved copy")) {
                 if (renameSource != *current) {
                     renameSource = *current;
                     renameName = current->stem().string();
@@ -445,13 +456,23 @@ struct UiController::Impl {
             }
         }
 
-        filter.Draw("Search presets");
+        ImGui::SeparatorText("Browse presets");
+        filter.Draw("Search presets", -1.0F);
+        ImGui::Checkbox("Favorites only", &favoritesOnly);
+        ImGui::SameLine();
+        if (ImGui::Button("Clear filters")) {
+            filter.Clear();
+            favoritesOnly = false;
+        }
+        std::size_t visibleCount = 0;
         ImGui::BeginChild("preset-list", {0.0F, 300.0F}, ImGuiChildFlags_Borders);
         for (const auto& preset : catalog.presets()) {
             const auto label = preset.stem().string();
-            if (!filter.PassFilter(label.c_str())) {
+            if (!filter.PassFilter(label.c_str()) || (favoritesOnly && !library.metadata(preset).favorite)) {
                 continue;
             }
+            ++visibleCount;
+            ImGui::PushID(preset.string().c_str());
             const bool selected = catalog.current().has_value() && *catalog.current() == preset;
             if (ImGui::Selectable(label.c_str(), selected) && callbacks.select) {
                 callbacks.select(preset, true);
@@ -467,10 +488,19 @@ struct UiController::Impl {
                 }
                 ImGui::EndPopup();
             }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", preset.string().c_str());
+            }
+            ImGui::PopID();
+        }
+        if (visibleCount == 0) {
+            ImGui::TextWrapped("No matching presets. Clear the filters or drop a preset folder into this window.");
         }
         ImGui::EndChild();
+        ImGui::Text("%zu of %zu presets", visibleCount, catalog.size());
 
-        ImGui::SeparatorText("Playlist");
+        if (ImGui::CollapsingHeader("Import / export playlists")) {
+        ImGui::TextWrapped("Enter an M3U file path to add presets or save your collection.");
         ImGui::InputText("M3U path", &playlistPath);
         if (ImGui::Button("Import")) {
             try {
@@ -488,6 +518,7 @@ struct UiController::Impl {
             } catch (const std::exception& error) {
                 overlays.push(error.what(), OverlaySeverity::Error);
             }
+        }
         }
         ImGui::End();
     }
@@ -643,6 +674,7 @@ struct UiController::Impl {
 
     bool showBrowser{true};
     bool showEditor{false};
+    bool favoritesOnly{false};
     ImGuiTextFilter filter;
     std::string playlistPath;
     std::filesystem::path renameSource;

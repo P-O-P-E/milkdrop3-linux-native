@@ -20,6 +20,8 @@ struct UiCallbacks {
     std::function<void(bool)> previous;
     std::function<void(const std::filesystem::path&, bool)> select;
     std::function<void()> updateTitle;
+    std::function<double()> fadeDuration;
+    std::function<void(double)> setFadeDuration;
     std::function<std::vector<AudioDeviceInfo>()> audioDevices;
     std::function<int()> currentAudioDevice;
     std::function<void(int)> selectAudioDevice;

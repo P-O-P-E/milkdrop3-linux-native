@@ -152,6 +152,8 @@ void Application::initialize() {
                 loadCurrent(smooth);
             }
         };
+        callbacks.fadeDuration = [this] { return config_.fadeDuration; };
+        callbacks.setFadeDuration = [this](double seconds) { config_.fadeDuration = seconds; };
         callbacks.updateTitle = [this] { updateTitle(); };
         callbacks.audioDevices = [] { return AudioCapture::devices(); };
         callbacks.currentAudioDevice = [this] { return audio_->deviceIndex(); };
