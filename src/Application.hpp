@@ -16,6 +16,7 @@ namespace md3 {
 
 class AudioCapture;
 class FadeOverlay;
+class NativeFluid;
 class ProjectMEngine;
 class UiController;
 
@@ -56,6 +57,13 @@ private:
     std::unique_ptr<ProjectMEngine> engine_;
     std::unique_ptr<AudioCapture> audio_;
     std::unique_ptr<FadeOverlay> fadeOverlay_;
+    std::unique_ptr<NativeFluid> nativeFluid_;
+    bool fluidMode_{false};
+    float fluidLook_{0.0F};
+    int fluidTarget_{0};
+    float fluidEnergy_{0.0F};
+    double fluidClock_{0.0};
+    double fluidAge_{0.0};
     std::unique_ptr<UiController> ui_;
     enum class FadePhase { Idle, Out, In };
     FadePhase fadePhase_{FadePhase::Idle};

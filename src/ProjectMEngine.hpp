@@ -5,6 +5,7 @@
 #include <projectM-4/projectM.h>
 
 #include <cstddef>
+#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <mutex>
@@ -26,6 +27,7 @@ public:
     void loadPresetData(const std::string& data, bool smooth) const;
     void loadIdle() const;
     void addAudio(const float* samples, unsigned int frames) const;
+    float audioLevel() const { return audioLevel_.load(std::memory_order_relaxed); }
     void updateFps(int fps) const;
 
     [[nodiscard]] bool locked() const;
@@ -45,6 +47,7 @@ private:
     void clearError() const;
     void setError(std::string message) const;
 
+    mutable std::atomic<float> audioLevel_{0.0F};
     projectm_handle handle_{nullptr};
     std::function<void(bool)> switchRequestedCallback_;
     mutable std::mutex errorMutex_;

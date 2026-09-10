@@ -107,6 +107,7 @@ if(MILKDROP3_BUILD_APP)
         src/Application.cpp
         src/AudioCapture.cpp
         src/FadeOverlay.cpp
+        src/NativeFluid.cpp
         src/ProjectMEngine.cpp
         src/UiController.cpp
     )

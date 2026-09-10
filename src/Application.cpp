@@ -2,6 +2,7 @@
 
 #include "AudioCapture.hpp"
 #include "FadeOverlay.hpp"
+#include "NativeFluid.hpp"
 #include "ProjectMEngine.hpp"
 #include "UiController.hpp"
 
@@ -96,8 +97,16 @@ void Application::initialize() {
     engine_ = std::make_unique<ProjectMEngine>(config_, static_cast<std::size_t>(drawableWidth),
                                                static_cast<std::size_t>(drawableHeight));
     fadeOverlay_ = std::make_unique<FadeOverlay>();
+    try {
+        nativeFluid_ = std::make_unique<NativeFluid>();
+        // Warm the shader before entering the interactive frame loop.
+        nativeFluid_->render(0.0F, 0.0F, 0.0F, static_cast<float>(drawableWidth)/static_cast<float>(std::max(1,drawableHeight)));
+        glFinish();
+    } catch (const std::exception& error) {
+        overlays_.push(std::string("Native fluid mode unavailable: ") + error.what(), OverlaySeverity::Warning);
+    }
     engine_->setSwitchRequestedCallback([this](const bool hardCut) {
-        if (fadePhase_ == FadePhase::Idle) {
+        if (!fluidMode_ && fadePhase_ == FadePhase::Idle) {
             loadNext(!hardCut);
         }
     });
@@ -148,10 +157,22 @@ void Application::initialize() {
         callbacks.next = [this](const bool smooth) { loadNext(smooth); };
         callbacks.previous = [this](const bool smooth) { loadPrevious(smooth); };
         callbacks.select = [this](const std::filesystem::path& path, const bool smooth) {
+            fluidMode_ = false;
             if (catalog_.select(path).has_value()) {
                 loadCurrent(smooth);
             }
         };
+        callbacks.fluidAvailable = [this] { return nativeFluid_ != nullptr; };
+        callbacks.fluidMode = [this] { return fluidMode_; };
+        callbacks.setFluidMode = [this](bool enabled) {
+            fluidMode_ = enabled && nativeFluid_ != nullptr;
+            fluidAge_ = 0.0;
+            pendingPreset_.reset();
+            fadePhase_ = FadePhase::Idle;
+            fadeOpacity_ = 0.0F;
+        };
+        callbacks.fluidLook = [this] { return fluidTarget_; };
+        callbacks.setFluidLook = [this](int look) { fluidTarget_ = std::clamp(look, 0, 3); fluidAge_ = 0.0; };
         callbacks.fadeDuration = [this] { return config_.fadeDuration; };
         callbacks.setFadeDuration = [this](double seconds) { config_.fadeDuration = seconds; };
         callbacks.updateTitle = [this] { updateTitle(); };
@@ -177,6 +198,7 @@ void Application::shutdown() {
     running_ = false;
     ui_.reset();
     audio_.reset();
+    nativeFluid_.reset();
     fadeOverlay_.reset();
     engine_.reset();
     if (glContext_ != nullptr) {
@@ -196,6 +218,7 @@ int Application::run() {
     initialize();
     const auto frameDuration = std::chrono::duration<double>(1.0 / static_cast<double>(config_.fps));
 
+    auto lastFrame = std::chrono::steady_clock::now();
     while (running_) {
         const auto frameStart = std::chrono::steady_clock::now();
         pollEvents();
@@ -203,8 +226,27 @@ int Application::run() {
 
         glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        engine_->render();
-        fadeOverlay_->render(fadeOpacity_);
+        const double dt = std::clamp(std::chrono::duration<double>(frameStart-lastFrame).count(), 0.0, 0.1);
+        lastFrame = frameStart;
+        if (fluidMode_) {
+            int width=0, height=0;
+            SDL_GL_GetDrawableSize(window_, &width, &height);
+            glViewport(0, 0, width, height);
+            fluidClock_ += dt;
+            fluidAge_ += dt;
+            if (!engine_->locked() && config_.presetDuration > 0.0 && fluidAge_ >= config_.presetDuration) {
+                fluidTarget_ = (fluidTarget_+1)%4;
+                fluidAge_ = 0.0;
+            }
+            const float blend = config_.fadeDuration > 0.0 ? static_cast<float>(1.0-std::exp(-dt*5.0/config_.fadeDuration)) : 1.0F;
+            fluidLook_ += (static_cast<float>(fluidTarget_)-fluidLook_)*blend;
+            fluidEnergy_ += (engine_->audioLevel()-fluidEnergy_)*static_cast<float>(1.0-std::exp(-dt*5.0));
+            nativeFluid_->render(static_cast<float>(fluidClock_), fluidLook_, fluidEnergy_,
+                                 static_cast<float>(width)/static_cast<float>(std::max(1,height)));
+        } else {
+            engine_->render();
+            fadeOverlay_->render(fadeOpacity_);
+        }
         if (ui_ != nullptr) {
             ui_->beginFrame();
             ui_->draw();
@@ -365,12 +407,14 @@ void Application::resize() {
 }
 
 void Application::loadNext(const bool smooth) {
+    if (fluidMode_) { fluidTarget_ = (fluidTarget_+1)%4; fluidAge_ = 0.0; return; }
     if (catalog_.next().has_value()) {
         loadCurrent(smooth);
     }
 }
 
 void Application::loadPrevious(const bool smooth) {
+    if (fluidMode_) { fluidTarget_ = (fluidTarget_+3)%4; fluidAge_ = 0.0; return; }
     if (catalog_.previous().has_value()) {
         loadCurrent(smooth);
     }

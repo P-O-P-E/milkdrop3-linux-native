@@ -1,6 +1,7 @@
 #include "ProjectMEngine.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -78,6 +79,13 @@ void ProjectMEngine::loadIdle() const { projectm_load_preset_file(handle_, "idle
 
 void ProjectMEngine::addAudio(const float* samples, const unsigned int frames) const {
     if (samples != nullptr && frames > 0) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i < static_cast<std::size_t>(frames)*2U; ++i) {
+            const double sample = std::isfinite(samples[i]) ? samples[i] : 0.0;
+            sum += sample*sample;
+        }
+        audioLevel_.store(static_cast<float>(std::min(1.0, std::sqrt(sum/(static_cast<double>(frames)*2.0))*4.0)),
+                          std::memory_order_relaxed);
         projectm_pcm_add_float(handle_, samples, frames, PROJECTM_STEREO);
     }
 }

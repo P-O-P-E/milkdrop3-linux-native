@@ -340,6 +340,15 @@ struct UiController::Impl {
         }
 
         ImGui::SeparatorText("Playback");
+        if (callbacks.fluidAvailable && callbacks.fluidAvailable()) {
+            bool native = callbacks.fluidMode();
+            if (ImGui::Checkbox("Native fluid mode", &native)) callbacks.setFluidMode(native);
+            if (native) {
+                int look = callbacks.fluidLook();
+                if (ImGui::Combo("Fluid look", &look, "Amber\0Violet\0Ocean\0Molten glass\0")) callbacks.setFluidLook(look);
+                ImGui::TextWrapped("Looks blend without loading presets or compiling new shaders. Selecting a library preset returns to MilkDrop mode.");
+            }
+        }
         if (callbacks.fadeDuration && callbacks.setFadeDuration) {
             float seconds = static_cast<float>(callbacks.fadeDuration());
             if (ImGui::SliderFloat("Fade duration", &seconds, 0.0F, 8.0F, "%.1f seconds")) {
