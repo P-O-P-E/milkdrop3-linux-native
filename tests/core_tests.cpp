@@ -252,6 +252,30 @@ void testGeneratedPresetStoreSafety() {
     require(refusedExternalRename, "community presets must not be renamed by the generated store");
 }
 
+void testBundledFluidPresets() {
+#ifdef MILKDROP3_TEST_PRESET_DIR
+    const std::filesystem::path root(MILKDROP3_TEST_PRESET_DIR);
+    std::size_t presetCount = 0;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".milk") {
+            continue;
+        }
+        ++presetCount;
+        const auto document = md3::PresetDocument::load(entry.path());
+        require(document.valid(), "bundled preset should parse: " + entry.path().string());
+        for (const auto& diagnostic : document.diagnostics()) {
+            require(diagnostic.severity != md3::DiagnosticSeverity::Error,
+                    "bundled preset contains an error: " + entry.path().string());
+        }
+        require(document.value("MILKDROP_PRESET_VERSION") == std::optional<std::string>("201"),
+                "bundled preset should use the modern MilkDrop format");
+        require(document.value("PSVERSION_COMP") == std::optional<std::string>("3"),
+                "bundled fluid preset should declare a composite shader");
+    }
+    require(presetCount >= 4, "the built-in fluid collection should contain at least four presets");
+#endif
+}
+
 } // namespace
 
 int main() {
@@ -267,6 +291,7 @@ int main() {
         testPlaylistImportExportAndSelection();
         testOverlayExpiry();
         testGeneratedPresetStoreSafety();
+        testBundledFluidPresets();
         std::cout << "All core tests passed\n";
         return 0;
     } catch (const std::exception& error) {

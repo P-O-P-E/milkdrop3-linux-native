@@ -1,0 +1,91 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=3
+PSVERSION_WARP=3
+PSVERSION_COMP=3
+[preset00]
+fRating=5.000000
+fGammaAdj=1.070000
+fDecay=0.992000
+fVideoEchoZoom=1.000000
+fVideoEchoAlpha=0.000000
+nVideoEchoOrientation=0
+nWaveMode=0
+bAdditiveWaves=0
+bWaveDots=0
+bWaveThick=0
+bModWaveAlphaByVolume=0
+bMaximizeWaveColor=0
+bTexWrap=1
+bDarkenCenter=0
+bMotionVectorsOn=0
+bRedBlueStereo=0
+bBrighten=0
+bDarken=0
+bSolarize=0
+bInvert=0
+fWaveAlpha=0.000000
+fWaveScale=1.000000
+fWaveSmoothing=0.500000
+fWaveParam=0.000000
+fModWaveAlphaStart=0.000000
+fModWaveAlphaEnd=1.000000
+fWarpAnimSpeed=0.280000
+fWarpScale=1.000000
+fZoomExponent=1.000000
+zoom=1.000000
+rot=0.000000
+cx=0.500000
+cy=0.500000
+dx=0.000000
+dy=0.000000
+warp=0.000000
+sx=1.000000
+sy=1.000000
+wave_r=1.000000
+wave_g=0.220000
+wave_b=0.040000
+wave_x=0.500000
+wave_y=0.500000
+ob_size=0.000000
+ob_r=0.000000
+ob_g=0.000000
+ob_b=0.000000
+ob_a=0.000000
+ib_size=0.000000
+ib_r=0.000000
+ib_g=0.000000
+ib_b=0.000000
+ib_a=0.000000
+nMotionVectorsX=12.000000
+nMotionVectorsY=9.000000
+mv_dx=0.000000
+mv_dy=0.000000
+mv_l=0.000000
+mv_r=0.000000
+mv_g=0.000000
+mv_b=0.000000
+mv_a=0.000000
+per_frame_1=q1=0.80*q1+0.20*bass_att;
+per_frame_2=q2=0.87*q2+0.13*mid_att;
+per_frame_3=q3=0.91*q3+0.09*treb_att;
+comp_1=`shader_body {
+comp_2=` float2 p=(uv-0.5)*aspect.xy;
+comp_3=` p.x+=0.045*sin(p.y*7.0+time*0.34);
+comp_4=` p.y+=0.025*sin(p.x*9.0-time*0.29);
+comp_5=` float2 c1=float2(-0.24+0.18*sin(time*0.20),-0.18+0.22*sin(time*0.15));
+comp_6=` float2 c2=float2(0.20+0.14*sin(time*0.17+2.0),0.06+0.28*sin(time*0.19+1.0));
+comp_7=` float2 c3=float2(-0.02+0.20*sin(time*0.12+4.4),0.34+0.13*sin(time*0.25));
+comp_8=` float f1=0.030/(dot((p-c1)/float2(1.20,0.85),(p-c1)/float2(1.20,0.85))+0.004);
+comp_9=` float f2=0.034/(dot((p-c2)/float2(0.90,1.30),(p-c2)/float2(0.90,1.30))+0.004);
+comp_10=` float f3=0.026/(dot((p-c3)/float2(1.15,0.92),(p-c3)/float2(1.15,0.92))+0.004);
+comp_11=` float field=(f1+f2+f3)*(0.94+0.06*saturate(q1));
+comp_12=` float body=smoothstep(1.20,1.66,field);
+comp_13=` float shell=saturate(smoothstep(0.92,1.30,field)-smoothstep(1.48,1.92,field));
+comp_14=` float shine=pow(saturate(0.5+0.5*sin(p.x*10.0-p.y*7.0+time*0.24)),8.0);
+comp_15=` float3 bg=lerp(float3(0.008,0.006,0.004),float3(0.055,0.012,0.002),uv.y);
+comp_16=` float3 glass=lerp(float3(0.36,0.018,0.002),float3(1.25,0.19,0.015),saturate(field*0.28));
+comp_17=` glass+=shell*float3(1.35,0.52,0.08);
+comp_18=` glass+=shine*shell*float3(0.75,0.55,0.25)*(0.25+0.08*saturate(q3));
+comp_19=` ret=lerp(bg,glass,body);
+comp_20=` ret+=shell*float3(0.28,0.05,0.004)*(0.5+0.06*saturate(q2));
+comp_21=`}

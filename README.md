@@ -23,6 +23,7 @@ input, and audio capture. Wine is not used on Linux, and the macOS build is nati
 - Selectable audio source in the in-window UI, including Linux monitor sources and macOS virtual audio inputs
 - Native Apple Silicon system-playback capture through ScreenCaptureKit (no virtual loopback driver required)
 - Smooth, eased fade-out/fade-in transitions for manual, timed, and beat-driven preset changes
+- Four original, texture-free fluid presets bundled on both Linux and macOS
 - Shuffle, ordered playback, preset history, and preset lock
 - Resizable, HiDPI-aware window and desktop fullscreen mode
 - Drag-and-drop preset files and directories
@@ -46,9 +47,10 @@ input, and audio capture. Wine is not used on Linux, and the macOS build is nati
 | Debian/Ubuntu | 64-bit Linux, `sudo`/APT access, Git, internet access, a working OpenGL 3.3 driver, and enough space to build libprojectM. `bootstrap-debian.sh` installs the compiler, CMake, Ninja, SDL2, SDL2_image, GLM, and Mesa development packages. |
 | Apple Silicon macOS | M1 or later, macOS 14+, Xcode Command Line Tools, Git/internet access, native ARM Homebrew at `/opt/homebrew`, and an OpenGL 4.1-capable system. The first system-audio selection also requires Screen & System Audio Recording permission. |
 
-Presets are not bundled automatically with the source checkout; run `scripts/get-presets.sh` or provide your own
-compatible `.milk` preset directory. This pre-release has automated Ubuntu and M1 build coverage, but its full hardware,
-driver, preset, signing, and distribution test matrix is not yet complete.
+A small original fluid collection is bundled and works without downloading textures. Run `scripts/get-presets.sh` to
+add the larger community collection, or provide your own compatible `.milk` directory. This pre-release has automated
+Ubuntu and M1 build coverage, but its full hardware, driver, preset, signing, and distribution test matrix is not yet
+complete.
 
 ## Quick start on Apple Silicon macOS
 
@@ -62,6 +64,7 @@ xcode-select --install
 git clone --branch macos-arm64 https://github.com/P-O-P-E/milkdrop3-linux-native.git
 cd milkdrop3-linux-native
 ./scripts/bootstrap-macos-arm64.sh
+# Optional: install the larger community preset and texture packs.
 ./scripts/get-presets.sh
 open "build/macos-arm64-stage/MilkDrop3 Native.app"
 ```
@@ -80,6 +83,7 @@ the tests:
 git clone https://github.com/P-O-P-E/milkdrop3-linux-native.git
 cd milkdrop3-linux-native
 ./scripts/bootstrap-debian.sh
+# Optional: install the larger community preset and texture packs.
 ./scripts/get-presets.sh
 ./build/release/milkdrop3-linux
 ```
@@ -136,8 +140,9 @@ or another output. Microphones and virtual inputs remain available as separate c
 ## Preset transitions
 
 Runtime preset changes now fade the current visualization to black, load the next preset while fully covered, and then
-fade the new visualization in. The opacity follows a smoothstep curve so the beginning, midpoint, and end do not snap.
-This also softens beat-triggered changes that projectM would otherwise request as hard cuts.
+fade the new visualization in. The opacity follows a fifth-order `smootherstep` curve with zero velocity and acceleration
+at both ends, so the beginning, midpoint, and end do not snap. This also softens beat-triggered changes that projectM
+would otherwise request as hard cuts.
 
 `fade_duration` is the total time for both halves of the transition and defaults to `2.4` seconds. For a slower fade:
 
@@ -147,6 +152,19 @@ fade_duration=4.0
 
 Set `fade_duration=0` to disable the application fade and return to projectM's native transition behavior. In that mode,
 `transition_duration` controls native smooth transitions and beat-triggered hard cuts can be abrupt.
+
+## Built-in fluid collection
+
+The application ships four clean-room MilkDrop presets under the **Fluid** category:
+
+- **Amber Metaballs** — slow rising warm blobs with bass-responsive volume
+- **Violet Plumes** — tall, cool-toned columns driven by midrange and treble
+- **Ocean Cells** — an interference field resembling liquid cells and underwater caustics
+- **Molten Glass** — translucent red-orange lobes with moving highlights
+
+They are installed into the Linux shared-data directory or the macOS application bundle and are found relative to the
+executable at startup. The same preset files and shaders are used on both platforms. They require no external images,
+so a fresh build always has visual content before the optional community pack is downloaded.
 
 ## Configuration
 

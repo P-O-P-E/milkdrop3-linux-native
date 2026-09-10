@@ -26,7 +26,7 @@ flowchart TD
 | Component | Responsibility |
 |---|---|
 | `Config` | XDG/Linux and Application Support/macOS paths, environment expansion, CLI parsing, and validation |
-| `PresetCatalog` | Recursive discovery, deduplication, shuffle/order, and 1,000-entry playback history |
+| `PresetCatalog` | Recursive built-in/user discovery, deduplication, shuffle/order, and 1,000-entry playback history |
 | `PresetLibrary` | Persistent ratings, favorites, play counts, and weighted-selection metadata |
 | `PresetDocument` | Loss-aware `.milk` parsing, serialization, classification, and diagnostics |
 | `MashupEngine` | Selective preset composition and collision-free generated output paths |
@@ -74,7 +74,15 @@ The application owns a two-phase transition state machine. It eases the rendered
 overlay, loads the pending preset at the covered midpoint, and eases the overlay back to transparent. Repeated manual
 selection during a fade updates the pending target without flashing; repeat automatic requests are suppressed until the
 active transition completes. Setting `fade_duration=0` bypasses this layer and restores libprojectM's native soft/hard
-transition behavior.
+transition behavior. Opacity uses fifth-order smootherstep easing, keeping both velocity and acceleration at zero at
+the endpoints.
+
+## Bundled presets
+
+The clean-room fluid collection is ordinary `.milk` data shared by both platforms. CMake installs it under
+`share/milkdrop3-linux/presets` on Linux and `Contents/Resources/presets` in the macOS bundle. At startup the application
+derives those locations from SDL's executable base path, while retaining the existing user-data and working-directory
+search paths. The presets use projectM's MilkDrop 2 composite-shader path and require no external textures.
 
 ## Audio
 

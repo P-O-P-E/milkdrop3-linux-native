@@ -15,6 +15,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 namespace md3 {
 namespace {
@@ -24,6 +25,21 @@ constexpr const char* productName = "MilkDrop3 Native";
 #else
 constexpr const char* productName = "MilkDrop3 Linux Native";
 #endif
+
+std::vector<std::filesystem::path> bundledPresetDirectories() {
+    char* rawBasePath = SDL_GetBasePath();
+    if (rawBasePath == nullptr) {
+        return {};
+    }
+
+    const std::filesystem::path basePath(rawBasePath);
+    SDL_free(rawBasePath);
+    return {
+        (basePath / "presets").lexically_normal(),
+        (basePath / ".." / "share" / "milkdrop3-linux" / "presets").lexically_normal(),
+        (basePath / ".." / "Resources" / "presets").lexically_normal(),
+    };
+}
 
 } // namespace
 
@@ -96,6 +112,12 @@ void Application::initialize() {
         return library_.selectionWeight(preset);
     });
 
+    for (const auto& path : bundledPresetDirectories()) {
+        const auto added = catalog_.addPath(path, true);
+        if (added > 0) {
+            std::cout << "Added " << added << " bundled presets from " << path << '\n';
+        }
+    }
     for (const auto& path : config_.presetPaths) {
         const auto added = catalog_.addPath(path, config_.recursive);
         if (added > 0) {
@@ -382,7 +404,10 @@ void Application::updatePresetFade(const std::chrono::steady_clock::time_point n
 
     const double elapsed = std::chrono::duration<double>(now - fadePhaseStart_).count();
     const float progress = static_cast<float>(std::clamp(elapsed / fadePhaseDuration_, 0.0, 1.0));
-    const float eased = progress * progress * (3.0F - 2.0F * progress);
+    // Quintic smootherstep has zero velocity and acceleration at both ends,
+    // avoiding the visible easing kink of ordinary cubic smoothstep.
+    const float eased = progress * progress * progress *
+                        (progress * (progress * 6.0F - 15.0F) + 10.0F);
 
     if (fadePhase_ == FadePhase::Out) {
         fadeOpacity_ = fadePhaseStartOpacity_ + (1.0F - fadePhaseStartOpacity_) * eased;

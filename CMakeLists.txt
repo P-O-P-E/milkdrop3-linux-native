@@ -8,7 +8,7 @@ if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
 endif()
 
 project(milkdrop3-linux-native
-    VERSION 0.3.0
+    VERSION 0.4.0
     DESCRIPTION "Native MilkDrop-compatible visualizer for Linux and Apple Silicon macOS"
     LANGUAGES CXX
 )
@@ -206,6 +206,10 @@ if(MILKDROP3_BUILD_APP)
 
     if(APPLE)
         install(TARGETS milkdrop3-linux BUNDLE DESTINATION .)
+        install(DIRECTORY presets/
+            DESTINATION "MilkDrop3 Native.app/Contents/Resources/presets"
+            FILES_MATCHING PATTERN "*.milk"
+        )
 
         set(MILKDROP3_BUNDLE_SEARCH_DIRS "/opt/homebrew/lib")
         foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
@@ -219,6 +223,10 @@ if(MILKDROP3_BUILD_APP)
         install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/BundleMacOS.cmake")
     else()
         install(TARGETS milkdrop3-linux RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        install(DIRECTORY presets/
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/milkdrop3-linux/presets
+            FILES_MATCHING PATTERN "*.milk"
+        )
         install(FILES packaging/milkdrop3-linux.desktop
             DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
         )
@@ -261,5 +269,8 @@ if(BUILD_TESTING)
     add_executable(milkdrop3-core-tests tests/core_tests.cpp)
     target_link_libraries(milkdrop3-core-tests PRIVATE milkdrop3_core)
     target_compile_features(milkdrop3-core-tests PRIVATE cxx_std_20)
+    target_compile_definitions(milkdrop3-core-tests PRIVATE
+        MILKDROP3_TEST_PRESET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/presets"
+    )
     add_test(NAME milkdrop3-core-tests COMMAND milkdrop3-core-tests)
 endif()

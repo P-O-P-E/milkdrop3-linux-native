@@ -5,6 +5,9 @@ releases.
 
 ## Unreleased — pre-release
 
+- Added four original, audio-reactive fluid/lava-lamp presets shared by Linux and macOS.
+- Bundled the fluid collection into Linux packages and the macOS application, with automatic runtime discovery.
+- Upgraded preset fades from cubic smoothstep to fifth-order smootherstep easing.
 - Replaced abrupt runtime preset cuts with a configurable, eased OpenGL fade-out/load/fade-in transition.
 - Added native Apple Silicon system-playback capture through ScreenCaptureKit alongside SDL microphone/virtual inputs.
 - Added an in-window audio-source selector and `--audio-device system` support.

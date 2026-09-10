@@ -1,0 +1,92 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=3
+PSVERSION_WARP=3
+PSVERSION_COMP=3
+[preset00]
+fRating=5.000000
+fGammaAdj=1.000000
+fDecay=0.990000
+fVideoEchoZoom=1.000000
+fVideoEchoAlpha=0.000000
+nVideoEchoOrientation=0
+nWaveMode=0
+bAdditiveWaves=0
+bWaveDots=0
+bWaveThick=0
+bModWaveAlphaByVolume=0
+bMaximizeWaveColor=0
+bTexWrap=1
+bDarkenCenter=0
+bMotionVectorsOn=0
+bRedBlueStereo=0
+bBrighten=0
+bDarken=0
+bSolarize=0
+bInvert=0
+fWaveAlpha=0.000000
+fWaveScale=1.000000
+fWaveSmoothing=0.500000
+fWaveParam=0.000000
+fModWaveAlphaStart=0.000000
+fModWaveAlphaEnd=1.000000
+fWarpAnimSpeed=0.250000
+fWarpScale=1.000000
+fZoomExponent=1.000000
+zoom=1.000000
+rot=0.000000
+cx=0.500000
+cy=0.500000
+dx=0.000000
+dy=0.000000
+warp=0.000000
+sx=1.000000
+sy=1.000000
+wave_r=0.600000
+wave_g=0.150000
+wave_b=1.000000
+wave_x=0.500000
+wave_y=0.500000
+ob_size=0.000000
+ob_r=0.000000
+ob_g=0.000000
+ob_b=0.000000
+ob_a=0.000000
+ib_size=0.000000
+ib_r=0.000000
+ib_g=0.000000
+ib_b=0.000000
+ib_a=0.000000
+nMotionVectorsX=12.000000
+nMotionVectorsY=9.000000
+mv_dx=0.000000
+mv_dy=0.000000
+mv_l=0.000000
+mv_r=0.000000
+mv_g=0.000000
+mv_b=0.000000
+mv_a=0.000000
+per_frame_1=q1=0.84*q1+0.16*bass_att;
+per_frame_2=q2=0.88*q2+0.12*mid_att;
+per_frame_3=q3=0.90*q3+0.10*treb_att;
+comp_1=`shader_body {
+comp_2=` float2 p=(uv-0.5)*aspect.xy;
+comp_3=` p.x+=0.035*sin(p.y*8.0+time*0.42);
+comp_4=` float2 c1=float2(-0.23+0.12*sin(time*0.19),-0.28+0.34*sin(time*0.17));
+comp_5=` float2 c2=float2(0.18+0.16*sin(time*0.16+2.3),-0.03+0.30*sin(time*0.21+1.1));
+comp_6=` float2 c3=float2(-0.02+0.24*sin(time*0.13+4.8),0.30+0.16*sin(time*0.27));
+comp_7=` float2 d1=(p-c1)/float2(0.78,1.55);
+comp_8=` float2 d2=(p-c2)/float2(1.05,1.32);
+comp_9=` float2 d3=(p-c3)/float2(0.88,1.48);
+comp_10=` float field=0.026/(dot(d1,d1)+0.005)+0.032/(dot(d2,d2)+0.006)+0.029/(dot(d3,d3)+0.005);
+comp_11=` field*=0.93+0.07*saturate(q1+q2);
+comp_12=` float body=smoothstep(1.12,1.68,field);
+comp_13=` float core=smoothstep(1.90,3.80,field);
+comp_14=` float rim=saturate(smoothstep(0.88,1.30,field)-smoothstep(1.55,2.10,field));
+comp_15=` float grain=0.5+0.5*sin((p.x*17.0+p.y*13.0)+time*0.31);
+comp_16=` float3 bg=lerp(float3(0.006,0.004,0.025),float3(0.025,0.008,0.070),uv.y);
+comp_17=` float3 plume=lerp(float3(0.30,0.025,0.92),float3(1.15,0.18,1.65),core);
+comp_18=` plume=lerp(plume,float3(0.18,0.82,1.45),saturate(q3*0.22+grain*0.10));
+comp_19=` ret=bg+rim*float3(0.16,0.04,0.38);
+comp_20=` ret=lerp(ret,plume,body);
+comp_21=` ret+=core*float3(0.22,0.08,0.30)*saturate(q2*0.18);
+comp_22=`}
